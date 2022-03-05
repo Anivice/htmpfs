@@ -1,6 +1,7 @@
 #include <buffer_t.h>
 #include <string>
 #include <cstring>
+#include <iostream>
 
 /** @file
  *
@@ -130,6 +131,15 @@ int main(int argc, char ** argv)
         {
             return EXIT_FAILURE;
         }
+    }
+
+    {
+        /// instance 10: hash test
+        const char * hello_world = "Hello, world!";
+        buffer_t buffer(hello_world, strlen(hello_world));
+        std::cout << buffer.to_string() << " : " << std::hex << buffer.hash64() << std::endl;
+        buffer.write("123", 3, 0, false);
+        std::cout << buffer.to_string() << " : " << std::hex << buffer.hash64() << std::endl;
     }
 
     return EXIT_SUCCESS;

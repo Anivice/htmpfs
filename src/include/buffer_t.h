@@ -43,6 +43,9 @@ public:
 
     /// check if buffer is empty
     [[nodiscard]] bool empty() const { return data.empty(); }
+
+    /// get a hash value for current data bank
+    uint64_t hash64();
 };
 
 #endif //HTMPFS_BUFFER_T_H

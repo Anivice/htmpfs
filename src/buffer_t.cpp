@@ -1,4 +1,5 @@
 #include <buffer_t.h>
+#include <functional>
 
 buffer_t::buffer_t(const char * new_data, htmpfs_size_t length)
 {
@@ -76,4 +77,9 @@ std::string buffer_t::to_string()
 {
     std::string ret(data.begin(), data.end());
     return ret;
+}
+
+uint64_t buffer_t::hash64()
+{
+    return std::hash <std::string>{}(to_string());
 }
