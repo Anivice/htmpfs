@@ -19,7 +19,7 @@ const char *HTMPFS_error_t::what() const noexcept
     ERROR_SWITCH_END;
 }
 
-const char * HTMPFS_error_t::_output_error_message(const char * direct_message) const noexcept
+void HTMPFS_error_t::_output_error_message(const char * direct_message) const noexcept
 {
     std::string errno_msg = what_errno();
     std::string error_msg =
@@ -27,5 +27,4 @@ const char * HTMPFS_error_t::_output_error_message(const char * direct_message) 
             "System error: " + errno_msg + "\n" +
             "User specified information: " + info + "\n";
     std::cerr << error_msg;
-    return direct_message;
 }

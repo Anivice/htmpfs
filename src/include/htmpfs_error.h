@@ -20,7 +20,8 @@ const unsigned long int code = val;
 /// Define error information
 _ADD_ERROR_INFORMATION_(HTMPFS_SUCCESSFUL,  0x00000000,  "Successful")
 _ADD_ERROR_INFORMATION_(HTMPFS_EXT_LIB_ERR, 0xA0000001, "External library error");
-
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC, 0xA0000002, "Double allocating in one node");
+_ADD_ERROR_INFORMATION_(HTMPFS_ILLEGAL_ACCESS, 0xA0000003, "Illegal access of memory");
 
 /// Filesystem Error Type
 class HTMPFS_error_t : public std::exception
@@ -57,8 +58,7 @@ public:
 private:
     /// output error message
     /// @param msg system message
-    /// @return pointer given by parameter msg
-    [[nodiscard]] const char * _output_error_message(const char * msg) const noexcept;
+    void _output_error_message(const char * msg) const noexcept;
 };
 
 /// this section is defining a marco with variable parameter count

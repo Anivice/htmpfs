@@ -38,6 +38,9 @@ add_library(${PROJECT_NAME}
         # buffer
         src/buffer_t.cpp src/include/buffer_t.h
 
+        # pathname resolver
+        src/path_t.cpp src/include/path_t.h src/include/custom_itr.h
+
         # Debug:
         src/debug/debug.cpp src/include/debug.h src/debug/error.cpp
         src/include/htmpfs_error.h
@@ -60,4 +63,6 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     _add_test(error         "Error test")
     _add_test(debug         "Debug test")
     _add_test(buffer_t      "buffer_t test")
+    _add_test(custom_iterator "Test for custom iterator")
+    _add_test(path          "Test for pathname resolver")
 endif()
