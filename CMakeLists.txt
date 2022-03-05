@@ -32,10 +32,17 @@ default_definition(${MARCO_PREFIX}_PREFIX "\"(${PROJECT_NAME}) \"")
 
 # STEMPFS Static Library
 add_library(${PROJECT_NAME}
-        src/include/htmpfs_error.h
+        # uni htmpfs
+        src/include/htmpfs.h src/htmpfs.cpp
+
+        # buffer
+        src/buffer_t.cpp src/include/buffer_t.h
 
         # Debug:
         src/debug/debug.cpp src/include/debug.h src/debug/error.cpp
+        src/include/htmpfs_error.h
+
+        src/uni_utils.cpp src/include/uni_utils.h
         )
 target_include_directories(${PROJECT_NAME} PUBLIC src/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${EXTERNAL_LIBRARIES})
@@ -50,6 +57,7 @@ endfunction()
 
     # Unit tests
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    _add_test(error       "Error test")
-    _add_test(debug       "Debug test")
+    _add_test(error         "Error test")
+    _add_test(debug         "Debug test")
+    _add_test(buffer_t      "buffer_t test")
 endif()
