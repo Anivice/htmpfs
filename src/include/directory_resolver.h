@@ -1,6 +1,10 @@
 #ifndef HTMPFS_DIRECTORY_RESOLVER_H
 #define HTMPFS_DIRECTORY_RESOLVER_H
 
+/** @file
+ *  this file implements functions for dictionary resolver supporting S_IFDIR inodes
+ */
+
 #include <string>
 #include <vector>
 #include <buffer_t.h>
@@ -14,28 +18,48 @@ class directory_resolver_t
         std::string pathname;
         uint64_t inode_id;
     };
+
+    struct flat_path_pack_t
+    {
+        char pathname[128] {};
+        uint64_t inode_id {};
+    };
+
     std::vector < path_pack_t > path;
     inode_t * associated_inode;
     uint64_t access_version;
 
 public:
     /// create a directory resolver
-    explicit directory_resolver_t(inode_t * _associated_inode, uint64_t);
+    /// @param _associated_inode associated inode
+    /// @param ver snapshot version
+    explicit directory_resolver_t(inode_t * _associated_inode, uint64_t ver);
 
     /// refresh from inode
     void refresh();
 
     /// make a vector by path
+    /// @return current dentry vector
     std::vector < path_pack_t > to_vector();
 
     /// add path to vector
-    void add_path(const std::string &, uint64_t);
+    /// @param pathname dentry entry
+    /// @param inode_id inode id
+    void add_path(const std::string & pathname, uint64_t inode_id);
 
     /// save curren dentry string
     void save_current();
 
     /// get inode id by name
-    uint64_t namei(const std::string &);
+    /// @param pathname dentry entry
+    /// @return inode id
+    uint64_t namei(const std::string & pathname);
+
+    /// check if pathname is available
+    /// @param pathname pathname pending for checking
+    /// @return availability status. true means pathname is available,
+    ///         false means pathname is occupied
+    bool check_availability(const std::string & pathname);
 };
 
 #endif //HTMPFS_DIRECTORY_RESOLVER_H

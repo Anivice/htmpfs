@@ -13,6 +13,7 @@ include(modules/func_def.cmake)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     add_compile_definitions(CMAKE_BUILD_DEBUG=1)
+    enable_testing()
 endif()
 
 add_compile_definitions("_FILE_OFFSET_BITS=64")
@@ -70,4 +71,8 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     _add_test(path              "Test for pathname resolver")
     _add_test(sig_inode         "Test for single inode")
     _add_test(dir_resolver      "Test for Directory Resolver")
+    _add_test(filesystem_snapshot
+             "Test for filesystem snapshot")
+    _add_test(filesystem
+            "Test for filesystem functionality")
 endif()

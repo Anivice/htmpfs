@@ -6,6 +6,10 @@
 #include <string>
 #include <map>
 
+/** @file
+ *  this file implements functions for universal buffer
+ */
+
 /// universal data type
 typedef std::vector <char> data_t;
 typedef uint64_t htmpfs_size_t;

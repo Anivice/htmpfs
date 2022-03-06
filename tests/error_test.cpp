@@ -32,5 +32,5 @@ int main()
         std::cerr << err.what() << std::endl;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

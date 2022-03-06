@@ -3,6 +3,36 @@
 #include <htmpfs_error.h>
 #include <htmpfs.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+template < typename Type >
+inline std::string type_to_string(Type num)
+{
+    std::string ret;
+    char * n_str = (char*)&num;
+    for (uint64_t i = 0; i < sizeof(num); i++)
+    {
+        ret += n_str[i];
+    }
+
+    return ret;
+}
+
+template < typename Type >
+inline Type string_to_type(const std::string & str)
+{
+    Type ret = *((Type*)str.c_str());
+    return ret;
+}
+
+void delete_elem_of_str_at_head(std::string & str, uint64_t num)
+{
+    for (uint64_t i = 0; i < num; i++)
+    {
+        str.erase(str.begin());
+    }
+}
+
 directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t ver)
 {
     associated_inode = _associated_inode;
@@ -14,42 +44,30 @@ void directory_resolver_t::refresh()
 {
     std::string name, inode_id;
     std::string all_path = associated_inode->to_string(access_version);
-    bool st_name = false, st_id = true;
+    char name_buff[129] { };
 
-    for (auto i : all_path)
+    // ignore empty dentry
+    if (all_path.empty())
     {
-        if (i == '/')
-        {
-            // read stops here
-            if (!st_name && st_id && !name.empty())
-            {
-                uint64_t encoded_inode_id = (*(uint64_t*)inode_id.c_str());
+        return;
+    }
 
-                path.emplace_back(
-                        path_pack_t {
-                            .pathname = name,
-                            .inode_id = encoded_inode_id
-                        }
-                );
+    // get save pack count, which is at the head of the string
+    auto save_pack_count = string_to_type<uint64_t>(all_path);
+    delete_elem_of_str_at_head(all_path, sizeof(uint64_t));
 
-                name.clear();
-                inode_id.clear();
-            }
+    for (uint64_t i = 0; i < save_pack_count; i++)
+    {
+        flat_path_pack_t save_pack;
+        path_pack_t runtime_path_pack;
 
-            st_name = !st_name;
-            st_id = !st_id;
-            continue;
-        }
+        save_pack = string_to_type<flat_path_pack_t>(all_path);
+        delete_elem_of_str_at_head(all_path, sizeof(save_pack));
+        strcpy(name_buff, save_pack.pathname);
+        runtime_path_pack.pathname = name_buff;
+        runtime_path_pack.inode_id = save_pack.inode_id;
 
-        if (st_name)
-        {
-            name += i;
-        }
-
-        if (st_id)
-        {
-            inode_id += i;
-        }
+        path.emplace_back(runtime_path_pack);
     }
 }
 
@@ -85,19 +103,32 @@ uint64_t directory_resolver_t::namei(const std::string & pathname)
 void directory_resolver_t::save_current()
 {
     std::string ret;
-    ret += "/";
+    ret += type_to_string<uint64_t>(path.size());
 
     for (const auto& i : path)
     {
-        ret += i.pathname + "/";
-        const char * str_inode = (char*)&i.inode_id;
-        for (int off = 0; off < 7; off++)
-        {
-            ret += str_inode[off];
-        }
+        flat_path_pack_t save_pack;
+        memcpy(save_pack.pathname,
+               i.pathname.c_str(),
+               MIN ( sizeof(save_pack.pathname), i.pathname.size() )
+               );
+        save_pack.inode_id = i.inode_id;
 
-        ret += "/";
+        ret += type_to_string(save_pack);
     }
 
     associated_inode->write(ret.c_str(), ret.length(), 0);
+}
+
+bool directory_resolver_t::check_availability(const std::string &pathname)
+{
+    for (const auto& i : path)
+    {
+        if (i.pathname == pathname)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -42,5 +42,10 @@ int main(int argc, char ** argv)
     directory_resolver2.refresh();
     std::cout << directory_resolver2.namei("sys") << std::endl;
 
+    if (directory_resolver2.check_availability("sys"))
+    {
+        return EXIT_FAILURE;
+    }
+
     return EXIT_SUCCESS;
 }

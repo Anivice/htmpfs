@@ -1,6 +1,10 @@
 #ifndef HTMPFS_HTMPFS_H
 #define HTMPFS_HTMPFS_H
 
+/** @file
+ *  general htmpfs specified classes
+ */
+
 #include <debug.h>
 #include <htmpfs_error.h>
 #include <cstdint>
@@ -13,6 +17,9 @@
 
 #define LEFT_SHIFT64(val, bit_count)  ((uint64_t)((uint64_t)(val) << (uint64_t)bit_count))
 #define RIGHT_SHIFT64(val, bit_count) ((uint64_t)((uint64_t)(val) >> (uint64_t)bit_count))
+
+#define FILESYSTEM_ROOT_INODE_NUMBER    0x00
+#define FILESYSTEM_CUR_MODIFIABLE_VER   0x00
 
 typedef uint32_t snapshot_ver_t;
 typedef uint64_t buffer_id_t;
@@ -39,6 +46,8 @@ private:
     > block_map;
 
 public:
+    /// file attributes. NOTE: this attribute is not maintained by any member of inode_t
+    /// if you wish to use this attribute, you have to update the information manually
     struct stat fs_stat { };
 
     /// initialize block
@@ -103,7 +112,7 @@ public:
     explicit filesystem_t(htmpfs_size_t _block_size);
 
     /// get inode pointer by path
-    inode_t * get_inode_by_path(const std::string&, snapshot_ver_t);
+    inode_id_t get_inode_by_path(const std::string&, snapshot_ver_t);
 
     /// make a child dentry under parent, only for version 0
     /// parent must be a directory

@@ -1,6 +1,10 @@
 #ifndef HTMPFS_CUSTOM_ITR_H
 #define HTMPFS_CUSTOM_ITR_H
 
+/** @file
+ *  this file implements functions for customized iterator
+ */
+
 #include <path_t.h>
 #include <htmpfs_error.h>
 #include <debug.h>

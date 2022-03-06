@@ -26,4 +26,6 @@ int main(int argc, char ** argv)
     OBTAIN_STACK_FRAME(2);
 
     func1();
+
+    return EXIT_SUCCESS;
 }

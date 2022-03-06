@@ -1,6 +1,7 @@
 #include <htmpfs.h>
 #include <algorithm>
 #include <htmpfs_error.h>
+#include <directory_resolver.h>
 
 #define VERIFY_DATA_OPS_LEN(operation, len) \
     if ((operation) != len)                 \
@@ -365,6 +366,7 @@ buffer_result_t filesystem_t::request_buffer_allocation()
 
 void filesystem_t::request_buffer_deletion(buffer_id_t buffer_id)
 {
+    // attempt to delete a non-exist buffer
     auto it = buffer_pool.find(buffer_id);
     if (it == buffer_pool.end())
     {
@@ -374,7 +376,7 @@ void filesystem_t::request_buffer_deletion(buffer_id_t buffer_id)
     buffer_pool.erase(it);
 }
 
-inode_t *filesystem_t::get_inode_by_path(const std::string & path, snapshot_ver_t)
+inode_id_t filesystem_t::get_inode_by_path(const std::string & path, snapshot_ver_t version)
 {
     path_t vec_path(path);
     inode_id_t current_inode = 0;
@@ -385,10 +387,11 @@ inode_t *filesystem_t::get_inode_by_path(const std::string & path, snapshot_ver_
         if (i.empty()) { continue; }
 
         // get next level of inode
-
+        directory_resolver_t directoryResolver(&inode_pool.at(current_inode), version);
+        current_inode = directoryResolver.namei(i);
     }
 
-    return nullptr;
+    return current_inode;
 }
 
 filesystem_t::filesystem_t(htmpfs_size_t _block_size)
@@ -399,10 +402,32 @@ filesystem_t::filesystem_t(htmpfs_size_t _block_size)
 
 }
 
-inode_id_t filesystem_t::make_child_dentry_under_parent(inode_id_t inode_id,
+inode_id_t filesystem_t::make_child_dentry_under_parent(inode_id_t parent_inode_id,
                                                        const std::string & name)
 {
+    // make sure parent inode is valid
+    auto it = inode_pool.find(parent_inode_id);
+    if (it == inode_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_INODE_NOT_FOUND);
+    }
 
+    // get parent inode pointer
+    inode_t * parent_inode = &it->second;
+    // directory resolver
+    directory_resolver_t directoryResolver(parent_inode, 0);
+
+    // check name availability
+    if (!directoryResolver.check_availability(name))
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_DOUBLE_MKPATHNAME);
+    }
+
+    // make a new inode
+    auto new_inode_id = get_free_id(inode_pool);
+    inode_pool.emplace(new_inode_id, inode_t(block_size, new_inode_id, this));
+    directoryResolver.add_path(name, new_inode_id);
+    directoryResolver.save_current();
 }
 
 void filesystem_t::remove_child_dentry_under_parent(inode_id_t inode_id)

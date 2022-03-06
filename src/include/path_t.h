@@ -1,6 +1,10 @@
 #ifndef HTMPFS_PATH_T_H
 #define HTMPFS_PATH_T_H
 
+/** @file
+ *  this file implements functions for path finder
+ */
+
 #include <string>
 #include <vector>
 #include <buffer_t.h>
