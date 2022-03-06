@@ -30,6 +30,10 @@ class directory_resolver_t
     uint64_t access_version;
 
 public:
+    /// C++ 11 APIs
+    std::vector < path_pack_t >::iterator begin() { return path.begin(); }
+    std::vector < path_pack_t >::iterator end() { return path.end(); }
+
     /// create a directory resolver
     /// @param _associated_inode associated inode
     /// @param ver snapshot version
