@@ -28,15 +28,19 @@ int main(int argc, char ** argv)
         std::cout << i.pathname << " (" << std::hex << i.inode_id << ") " << std::flush;
     }
 
-    std::cout << std::endl << directory_resolver2.namei("bin") << std::endl;
+    directory_resolver.add_path("sys", 0xF7);
+    directory_resolver.save_current();
 
     try {
-        std::cout << std::endl << directory_resolver.namei("sys") << std::endl;
+        std::cout << std::endl << directory_resolver2.namei("sys") << std::endl;
         return EXIT_FAILURE;
     } catch (std::exception & err)
     {
         std::cout << err.what() << std::endl;
     }
+
+    directory_resolver2.refresh();
+    std::cout << directory_resolver2.namei("sys") << std::endl;
 
     return EXIT_SUCCESS;
 }

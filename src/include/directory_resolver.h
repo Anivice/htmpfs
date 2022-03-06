@@ -22,6 +22,9 @@ public:
     /// create a directory resolver
     explicit directory_resolver_t(inode_t * _associated_inode, uint64_t);
 
+    /// refresh from inode
+    void refresh();
+
     /// make a vector by path
     std::vector < path_pack_t > to_vector();
 

@@ -4,10 +4,16 @@
 #include <htmpfs.h>
 
 directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t ver)
-: associated_inode(_associated_inode), access_version(ver)
+{
+    associated_inode = _associated_inode;
+    access_version = ver;
+    refresh();
+}
+
+void directory_resolver_t::refresh()
 {
     std::string name, inode_id;
-    std::string all_path = _associated_inode->to_string(ver);
+    std::string all_path = associated_inode->to_string(access_version);
     bool st_name = false, st_id = true;
 
     for (auto i : all_path)

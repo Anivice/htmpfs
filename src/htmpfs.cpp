@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <htmpfs_error.h>
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define VERIFY_DATA_OPS_LEN(operation, len) \
     if ((operation) != len)                 \
     {                                       \
@@ -64,10 +63,10 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
         if ((!offset) or (offset < block_size)) { }
         // offset == block_size starting_buffer == 1
         else if (offset == block_size) { starting_buffer = 1; }
-        // if offset > block_size, then starting_buffer = offset / block_size + (offset % block_size) - 1
+        // if offset > block_size, then starting_buffer = offset / block_size
         else if (offset > block_size)
         {
-            starting_buffer = offset / block_size + (offset % block_size) - 1;
+            starting_buffer = offset / block_size;
         }
 
         /*
@@ -135,7 +134,7 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
         htmpfs_size_t write_size;
         if (offset > current_data_size(0)) // write beyond data bank
         {
-            write_size = 0;
+            return 0;
         }
         else if (offset + length > current_data_size(0)) // bank size shortage
         {
@@ -159,10 +158,10 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
         if ((!offset) or (offset < block_size)) { }
         // offset == block_size starting_buffer == 1
         else if (offset == block_size) { starting_buffer = 1; }
-        // if offset > block_size, then starting_buffer = offset / block_size + (offset % block_size) - 1
+        // if offset > block_size, then starting_buffer = offset / block_size
         else if (offset > block_size)
         {
-            starting_buffer = offset / block_size + (offset % block_size) - 1;
+            starting_buffer = offset / block_size;
         }
 
         // write_length_in_starting_buffer
@@ -225,7 +224,7 @@ htmpfs_size_t inode_t::read(snapshot_ver_t version, char *buffer, htmpfs_size_t 
     htmpfs_size_t read_size;
     if (offset > current_data_size(version)) // read beyond data bank
     {
-        read_size = 0;
+        return 0;
     }
     else if (offset + length > current_data_size(version)) // bank size shortage
     {
@@ -249,10 +248,10 @@ htmpfs_size_t inode_t::read(snapshot_ver_t version, char *buffer, htmpfs_size_t 
     if ((!offset) or (offset < block_size)) { }
     // offset == block_size starting_buffer == 1
     else if (offset == block_size) { starting_buffer = 1; }
-    // if offset > block_size, then starting_buffer = offset / block_size + (offset % block_size) - 1
+    // if offset > block_size, then starting_buffer = offset / block_size
     else if (offset > block_size)
     {
-        starting_buffer = offset / block_size + (offset % block_size) - 1;
+        starting_buffer = offset / block_size;
     }
 
     // read_length_in_starting_buffer
