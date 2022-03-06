@@ -79,5 +79,18 @@ int main(int argc, char ** argv)
         }
     }
 
+    {
+        /// instance 4: last access
+
+        try
+        {
+            *iterator.last();
+        }
+        catch (...)
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     return EXIT_SUCCESS;
 }

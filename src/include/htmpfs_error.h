@@ -18,24 +18,25 @@ const unsigned long int code = val;
 
 
 /// Define error information
-_ADD_ERROR_INFORMATION_(HTMPFS_SUCCESSFUL,          0x00000000,     "Successful")
-_ADD_ERROR_INFORMATION_(HTMPFS_EXT_LIB_ERR,         0xA0000001,     "External library error")
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC,        0xA0000002,     "Double allocating in one node")
-_ADD_ERROR_INFORMATION_(HTMPFS_ILLEGAL_ACCESS,      0xA0000003,     "Illegal access of memory")
-_ADD_ERROR_INFORMATION_(HTMPFS_SNAPSHOT_VER_DEPLETED, 0xA0000004,   "Snapshot version depleted")
-_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_SNAPSHOT,    0xA0000005,     "Snapshot not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_SNAPSHOT,     0xA0000006,     "Double snapshot")
-_ADD_ERROR_INFORMATION_(HTMPFS_BLOCK_NOT_FOUND,     0xA0000007,     "Block not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_ID_DEPLETED,  0xA0000008,     "Buffer ID depleted")
-_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_WRITE,  0xA0000009,     "Buffer short write")
-_ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIRECTORY,     0xA000000A,     "Inode is not a directory")
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_MKPATHNAME,   0xA000000B,     "Pathname already exists")
-_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_FILE_OR_DIR, 0xA000000C,     "No such file or directory")
-_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_BUFFER_NOT_FOUND, 0xA000000D, "Requested buffer not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_INODE_NOT_FOUND, 0xA000000E, "Requested inode not found")
+_ADD_ERROR_INFORMATION_(HTMPFS_SUCCESSFUL,              0x00000000,     "Successful")
+_ADD_ERROR_INFORMATION_(HTMPFS_EXT_LIB_ERR,             0xA0000001,     "External library error")
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC,            0xA0000002,     "Double allocating in one node")
+_ADD_ERROR_INFORMATION_(HTMPFS_ILLEGAL_ACCESS,          0xA0000003,     "Illegal access of memory")
+_ADD_ERROR_INFORMATION_(HTMPFS_SNAPSHOT_VER_DEPLETED,   0xA0000004,     "Snapshot version depleted")
+_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_SNAPSHOT,        0xA0000005,     "Snapshot not found")
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_SNAPSHOT,         0xA0000006,     "Double snapshot")
+_ADD_ERROR_INFORMATION_(HTMPFS_BLOCK_NOT_FOUND,         0xA0000007,     "Block not found")
+_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_ID_DEPLETED,      0xA0000008,     "Buffer ID depleted")
+_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_WRITE,      0xA0000009,     "Buffer short write")
+_ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIRECTORY,         0xA000000A,     "Inode is not a directory")
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_MKPATHNAME,       0xA000000B,     "Pathname already exists")
+_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_FILE_OR_DIR,     0xA000000C,     "No such file or directory")
+_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_BUFFER_NOT_FOUND,  0xA000000D, "Requested buffer not found")
+_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_INODE_NOT_FOUND,   0xA000000E, "Requested inode not found")
 _ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_VERSION_NOT_FOUND, 0xA000000F, "Requested version not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIR,           0xA0000010,     "Not a directory inode")
-_ADD_ERROR_INFORMATION_(HTMPFS_DIR_NOT_EMPTY,       0xA0000011,     "Directory inode not empty")
+_ADD_ERROR_INFORMATION_(HTMPFS_DIR_NOT_EMPTY,           0xA0000011,     "Directory inode not empty")
+_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_READ,       0xA0000012,     "Buffer short read")
+
 
 /// Filesystem Error Type
 class HTMPFS_error_t : public std::exception
@@ -54,7 +55,7 @@ public:
         : error_code(_code), _errno(errno), info(std::move(_info))
         {
             std::cerr << "HTMPFS Error thrown" << std::endl;
-            _output_error_message(std::to_string(my_errcode()).c_str());
+            _output_error_message();
         }
 
     /// Return explanation of current error
@@ -72,7 +73,7 @@ public:
 private:
     /// output error message
     /// @param msg system message
-    void _output_error_message(const char * msg) const noexcept;
+    void _output_error_message() const noexcept;
 };
 
 /// this section is defining a marco with variable parameter count

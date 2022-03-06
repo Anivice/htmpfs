@@ -165,7 +165,7 @@ template<typename Type>
 _custom_it_t<Type> _custom_it_t<Type>::begin()
 {
     _custom_it_t<Type> ret { };
-    ret.current->current = current->node_begin;
+    ret.current = current->node_begin;
     ret.node_begin = current->node_begin;
     return ret;
 }
@@ -199,6 +199,20 @@ template<typename Type>
 _custom_it_t<Type>::_custom_it_t(const _custom_it_t<Type> &new_data)
 {
     current = new_data.current;
+}
+
+template<typename Type>
+_custom_it_t<Type> _custom_it_t<Type>::last()
+{
+    _custom_it_t * ops = current->node_begin;
+    while (ops->node_next)
+    {
+        ops = ops->node_next;
+    }
+
+    _custom_it_t<Type> ret { };
+    ret.current = ops;
+    return ret;
 }
 
 #undef OUTPUT_COMMAND

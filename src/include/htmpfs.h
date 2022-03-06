@@ -51,6 +51,10 @@ public:
     /// public accessible dentry flag
     [[nodiscard]] bool __is_dentry() const { return is_dentry; }
 
+    /// dentry override
+    /// !! FOR DEBUG PURPOSE ONLY !!
+    void __override_dentry_flag(bool status) { is_dentry = status; }
+
     /// file attributes. NOTE: this attribute is not maintained by any member of inode_t
     /// if you wish to use this attribute, you have to update the information manually
     struct stat fs_stat { };
@@ -87,22 +91,32 @@ public:
     friend class inode_smi_t;
 };
 
+/*
+ * Index-NODE System Management Interface
+ *
+ * */
+
+class filesystem_map_t;
+
 class inode_smi_t
 {
 private:
+    /// buffer pack for vector storage
     struct buffer_pack_t
     {
         uint64_t link_count{};
         buffer_t buffer;
     };
 
+    /// inode pack for vector storage
     struct inode_pack_t
     {
         uint64_t link_count{};
         inode_t  inode;
     };
 
-    htmpfs_size_t block_size;
+    /// const value, current bank block size
+    const htmpfs_size_t block_size;
 
     /// root inode
     inode_t * filesystem_root;
@@ -113,7 +127,10 @@ private:
     /// inode pool
     std::map < inode_id_t, inode_pack_t > inode_pool;
 
-    /// get a free buffer id
+    /// snapshot version list
+    std::vector < snapshot_ver_t > snapshot_version_list;
+
+    /// get a free id
     template<class Typename>
     uint64_t get_free_id(Typename & pool);
 
@@ -121,6 +138,7 @@ private:
     /// request allocating buffer
     buffer_result_t request_buffer_allocation();
 
+    /// REQUEST FUNCTIONS: ONLY INVOKABLE BY inode_t
     /// request deletion of buffer
     void request_buffer_deletion(buffer_id_t);
 
@@ -134,7 +152,7 @@ public:
     explicit inode_smi_t(htmpfs_size_t _block_size);
 
     /// get inode pointer by path
-    inode_id_t get_inode_by_path(const std::string&, snapshot_ver_t);
+    inode_id_t get_inode_id_by_path(const std::string&, snapshot_ver_t);
 
     /// get inode pointer by id
     inode_t * get_inode_by_id(inode_id_t inode_id);
@@ -152,6 +170,18 @@ public:
     void remove_child_dentry_under_parent(inode_id_t parent_inode_id,
                                           const std::string & name);
 
+    /// create a snapshot volume
+    /// @return snapshot volume version
+    snapshot_ver_t create_snapshot_volume();
+
+    /// create a snapshot volume
+    /// @param version snapshot version
+    void delete_snapshot_volume(snapshot_ver_t version);
+
+    /// export current filesystem layout as filesystem map
+    /// @retuen filesystem layout
+    filesystem_map_t export_as_filesystem_map();
+
     friend inode_t;
 };
 
@@ -168,5 +198,13 @@ uint64_t inode_smi_t::get_free_id(Typename & pool) {
 
     return id;
 }
+
+class filesystem_map_t
+{
+public:
+    std::map < std::string, filesystem_map_t > children;
+    bool is_dentry = false;
+    void makep(const std::string & pathname, bool is_dir);
+};
 
 #endif //HTMPFS_HTMPFS_H

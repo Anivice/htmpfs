@@ -29,17 +29,15 @@ const char *HTMPFS_error_t::what() const noexcept
         ERROR_SWITCH_CASE(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
         ERROR_SWITCH_CASE(HTMPFS_REQUESTED_INODE_NOT_FOUND);
         ERROR_SWITCH_CASE(HTMPFS_REQUESTED_VERSION_NOT_FOUND);
-        ERROR_SWITCH_CASE(HTMPFS_NOT_A_DIR);
         ERROR_SWITCH_CASE(HTMPFS_DIR_NOT_EMPTY);
+        ERROR_SWITCH_CASE(HTMPFS_BUFFER_SHORT_READ);
     ERROR_SWITCH_END;
 }
 
-void HTMPFS_error_t::_output_error_message(const char * direct_message) const noexcept
+void HTMPFS_error_t::_output_error_message() const noexcept
 {
-    std::string errno_msg = what_errno();
-    std::string error_msg =
-            "HTMPFS error: " + std::string(direct_message) + "\n" +
-            "System error: " + errno_msg + "\n" +
-            "User specified information: " + info + "\n";
-    std::cerr << error_msg;
+    std::cerr <<
+            "HTMPFS error: 0x" << std::uppercase << std::hex << error_code << " (" << what() << ")" << "\n" <<
+            "System error: " << what_errno() << "\n" <<
+            "User specified information: " << info << "\n" << std::flush;
 }

@@ -128,7 +128,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 6: namei dentry, both successful and failed
+        /// instance 6: makep dentry, both successful and failed
 
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);

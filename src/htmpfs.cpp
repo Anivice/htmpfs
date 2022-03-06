@@ -18,6 +18,11 @@ inode_t::inode_t(uint64_t _block_size, uint32_t _inode_id, inode_smi_t * _filesy
 
 htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_size_t offset, bool resize)
 {
+    if (!length)
+    {
+        return 0;
+    }
+
     auto &snapshot_0_block_list = block_map.at(0);
 
     // if resizing buffer
@@ -220,6 +225,11 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
 
 htmpfs_size_t inode_t::read(snapshot_ver_t version, char *buffer, htmpfs_size_t length, htmpfs_size_t offset)
 {
+    if (!length)
+    {
+        return 0;
+    }
+
     auto &snapshot_block_list = block_map.at(version);
 
     htmpfs_size_t read_size;
@@ -320,6 +330,12 @@ std::string inode_t::to_string(snapshot_ver_t version)
     auto read_len =
             read(version, buffer, block_size * block_map.at(version).size() + 1, 0);
 
+    if (read_len != current_data_size(version))
+    {
+        delete []buffer;
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_BUFFER_SHORT_READ);
+    }
+
     for (uint64_t i = 0; i < read_len; i++)
     {
         ret += buffer[i];
@@ -380,7 +396,7 @@ void inode_smi_t::request_buffer_deletion(buffer_id_t buffer_id)
     }
 }
 
-inode_id_t inode_smi_t::get_inode_by_path(const std::string & path, snapshot_ver_t version)
+inode_id_t inode_smi_t::get_inode_id_by_path(const std::string & path, snapshot_ver_t version)
 {
     path_t vec_path(path);
     inode_id_t current_inode = 0;
@@ -416,6 +432,7 @@ inode_smi_t::inode_smi_t(htmpfs_size_t _block_size)
     );
 
     filesystem_root = &inode_pool.at(0).inode;
+    snapshot_version_list.emplace_back(0);
 }
 
 inode_id_t inode_smi_t::make_child_dentry_under_parent(inode_id_t parent_inode_id,
@@ -453,6 +470,8 @@ inode_id_t inode_smi_t::make_child_dentry_under_parent(inode_id_t parent_inode_i
 
     directoryResolver.add_path(name, new_inode_id);
     directoryResolver.save_current();
+
+    return new_inode_id;
 }
 
 void inode_smi_t::link_buffer(buffer_id_t buffer_id)
@@ -535,3 +554,53 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
         inode_pool.erase(target_it);
     }
 }
+
+filesystem_map_t inode_smi_t::export_as_filesystem_map()
+{
+    filesystem_map_t sys_map;
+
+    /* traverse filesystem
+     * first, a function that shows all targets within the current directory
+     * */
+
+
+
+}
+
+void filesystem_map_t::makep(const std::string &pathname, bool is_dir)
+{
+    path_t vec_path(pathname);
+
+    filesystem_map_t * dir = this;
+    for (const auto& i : vec_path)
+    {
+        // skip root
+        if (i.empty()) { continue; }
+
+        // find child
+        auto it = dir->children.find(i);
+
+        // child not found, then create a new child
+        if (it == dir->children.end())
+        {
+            dir->children.emplace(i, filesystem_map_t { .is_dentry = is_dir });
+        }
+
+        // child found
+        dir = &it->second;
+    }
+
+
+}
+
+snapshot_ver_t inode_smi_t::create_snapshot_volume()
+{
+    return 0;
+}
+
+void inode_smi_t::delete_snapshot_volume(snapshot_ver_t version)
+{
+
+}
+
+

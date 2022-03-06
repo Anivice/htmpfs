@@ -1,5 +1,4 @@
 #include <directory_resolver.h>
-#include <algorithm>
 #include <htmpfs_error.h>
 #include <htmpfs.h>
 
@@ -99,7 +98,9 @@ uint64_t directory_resolver_t::namei(const std::string & pathname)
 {
     for (const auto& i : path)
     {
-        if (i.pathname == pathname) {
+        if (!memcmp(i.pathname.c_str(), pathname.c_str(),
+                    MIN(i.pathname.length(), pathname.length())))
+        {
             return i.inode_id;
         }
     }

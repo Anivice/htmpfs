@@ -117,6 +117,9 @@ public:
     /// create an empty node at the start
     _custom_it_t();
 
+    // return last element of the ring
+    _custom_it_t last();
+
     /// C++ 11 iterator API
     _custom_it_t begin(); // buffer accessible
     _custom_it_t end(); // !!! Please note that this is different from an end node !!!
@@ -132,10 +135,11 @@ private:
     iterator pathname;
 
 public:
-    explicit path_t (const std::string &);
-    iterator begin()    { return pathname.begin(); }
-    iterator end()      { return pathname.end(); }
-    htmpfs_size_t size() { return pathname.size(); }
+    explicit        path_t  (const std::string &);
+    iterator        begin   ()                      { return pathname.begin();  }
+    iterator        end     ()                      { return pathname.end();    }
+    htmpfs_size_t   size    ()                      { return pathname.size();   }
+    iterator        last    ()                      { pathname.last();          }
 };
 
 #include <custom_itr.h>

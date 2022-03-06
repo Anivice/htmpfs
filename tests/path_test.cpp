@@ -7,22 +7,28 @@
  * This file handles test for pathname resolver
  */
 
+#define VERIFY_DATA(val, tag) if ((tag) != (val)) { return EXIT_FAILURE; } __asm__("nop")
 
 int main(int argc, char ** argv)
 {
-    path_t path("/usr/bin/bash");
-
-    for (const auto& i : path)
     {
-        std::cout << i << " ";
+        /// instance 1: path match
+
+        path_t path("/usr/bin/bash");
+        std::vector < std::string > list ({"", "usr", "bin", "bash"});
+
+        int off = 0;
+        for (const auto& i : path)
+        {
+            VERIFY_DATA(i, list[off++]);
+        }
     }
-    std::cout << path.size() << " ";
 
-    path_t path2("/");
-
-    for (const auto& i : path2)
     {
-        std::cout << path2.size();
+        /// instance 2: empty match
+
+        path_t path2("/");
+        VERIFY_DATA(path2.size(), 1);
     }
 
     return EXIT_SUCCESS;
