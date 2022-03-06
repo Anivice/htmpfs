@@ -1,5 +1,6 @@
 #include <buffer_t.h>
 #include <functional>
+#include <htmpfs_error.h>
 
 buffer_t::buffer_t(const char * new_data, htmpfs_size_t length)
 {
@@ -33,38 +34,48 @@ htmpfs_size_t buffer_t::read(char *buffer, htmpfs_size_t length, htmpfs_size_t o
     return read_size;
 }
 
-htmpfs_size_t buffer_t::write(const char *buffer, htmpfs_size_t length, htmpfs_size_t offset, bool append)
+htmpfs_size_t buffer_t::write(const char *buffer, htmpfs_size_t length, htmpfs_size_t offset, bool resize)
 {
     htmpfs_size_t write_size;
-    if (!append)
+
+    if (!resize)
     {
-        if (offset > data.size())
+        if (offset > data.size()) // write beyond buffer
         {
             write_size = 0;
         }
-        else if (data.size() < (length + offset))
+        else if (data.size() < (length + offset)) // write size larger than us, lost some data
         {
             write_size = data.size() - offset;
         }
-        else
+        else // write length OK
         {
             write_size = length;
         }
     }
-    else
+    else // resize buffer when writing
     {
-        if (length + offset > data.size())
+        if (length + offset > data.size()) // wanted bank is larger than us
         {
-            htmpfs_size_t lost = length + offset - data.size();
-            for (htmpfs_size_t i = 0; i < lost; i++)
+            htmpfs_size_t grow_size = length + offset - data.size();
+            for (htmpfs_size_t i = 0; i < grow_size; i++)
             {
                 data.emplace_back(0);
+            }
+        }
+        else // wanted bank is smaller than us
+        {
+            htmpfs_size_t lost = data.size() - (length + offset);
+            for (htmpfs_size_t i = 0; i < lost; i++)
+            {
+                data.pop_back();
             }
         }
 
         write_size = length;
     }
 
+    // write data
     for (htmpfs_size_t i = 0; i < write_size; i++)
     {
         data[offset + i] = buffer[i];

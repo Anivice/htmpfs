@@ -66,5 +66,18 @@ int main(int argc, char ** argv)
         std::cout << std::endl;
     }
 
+    {
+        /// instance 3: invalid access
+
+        try
+        {
+            *iterator.end();
+            return EXIT_FAILURE;
+        }
+        catch (...)
+        {
+        }
+    }
+
     return EXIT_SUCCESS;
 }

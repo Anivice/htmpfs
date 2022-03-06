@@ -1,7 +1,7 @@
 #ifndef HTMPFS_CUSTOM_ITR_H
 #define HTMPFS_CUSTOM_ITR_H
 
-#include "path_t.h"
+#include <path_t.h>
 #include <htmpfs_error.h>
 #include <debug.h>
 
@@ -180,7 +180,7 @@ _custom_it_t<Type> _custom_it_t<Type>::end()
 template<typename Type>
 Type &_custom_it_t<Type>::operator*()
 {
-    if (current)
+    if (current && !at_eol)
     {
         return current->data;
     }

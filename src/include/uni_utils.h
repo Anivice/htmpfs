@@ -7,11 +7,6 @@
 #include <ctime>
 
 /// get current time
-timespec get_current_time()
-{
-    timespec ts{};
-    timespec_get(&ts, TIME_UTC);
-    return ts;
-}
+timespec get_current_time();
 
 #endif //HTMPFS_UNI_UTILS_H

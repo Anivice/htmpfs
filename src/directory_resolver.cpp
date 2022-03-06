@@ -1,12 +1,13 @@
 #include <directory_resolver.h>
 #include <algorithm>
 #include <htmpfs_error.h>
+#include <htmpfs.h>
 
-directory_resolver_t::directory_resolver_t(buffer_t & _path, inode_t *_associated_inode)
-: associated_inode(_associated_inode)
+directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t ver)
+: associated_inode(_associated_inode), access_version(ver)
 {
     std::string name, inode_id;
-    std::string all_path = _path.to_string();
+    std::string all_path = _associated_inode->to_string(ver);
     bool st_name = false, st_id = true;
 
     for (auto i : all_path)
@@ -14,18 +15,9 @@ directory_resolver_t::directory_resolver_t(buffer_t & _path, inode_t *_associate
         if (i == '/')
         {
             // read stops here
-            if (!st_name && st_id)
+            if (!st_name && st_id && !name.empty())
             {
-                uint64_t encoded_inode_id = 0;
-
-                for (uint64_t off = inode_id.length(); off > 0; off--)
-                {
-                    // if length == 0, this operation will be ignored
-                    // so it's safe here to use off - 1
-                    uint64_t bit_cmp = (uint64_t)i << (uint64_t)((off - 1) * 8);
-
-                    encoded_inode_id |= bit_cmp;
-                }
+                uint64_t encoded_inode_id = (*(uint64_t*)inode_id.c_str());
 
                 path.emplace_back(
                         path_pack_t {
@@ -53,8 +45,6 @@ directory_resolver_t::directory_resolver_t(buffer_t & _path, inode_t *_associate
             inode_id += i;
         }
     }
-
-
 }
 
 std::vector < directory_resolver_t::path_pack_t > directory_resolver_t::to_vector()
@@ -74,21 +64,34 @@ void directory_resolver_t::add_path(const std::string & pathname, uint64_t inode
     path.emplace_back(path_pack_t { .pathname = pathname, .inode_id = inode_id} );
 }
 
-std::vector < char > directory_resolver_t::to_string()
+uint64_t directory_resolver_t::namei(const std::string & pathname)
 {
-    std::vector <char> ret;
-    ret.emplace_back('/');
-
     for (const auto& i : path)
     {
-        for (const auto & path_i : i.pathname) {
-            ret.emplace_back(path_i);
-        }
-
-        for (int off = 7; off >= 0; off--) {
-            ret.emplace_back(((uint64_t) i.inode_id) >> (uint64_t)off);
+        if (i.pathname == pathname) {
+            return i.inode_id;
         }
     }
 
-    return ret;
+    THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_FILE_OR_DIR);
+}
+
+void directory_resolver_t::save_current()
+{
+    std::string ret;
+    ret += "/";
+
+    for (const auto& i : path)
+    {
+        ret += i.pathname + "/";
+        const char * str_inode = (char*)&i.inode_id;
+        for (int off = 0; off < 7; off++)
+        {
+            ret += str_inode[off];
+        }
+
+        ret += "/";
+    }
+
+    associated_inode->write(ret.c_str(), ret.length(), 0);
 }

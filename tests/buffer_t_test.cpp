@@ -32,7 +32,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 3: write to an empty buffer, append enabled
+        /// instance 3: write to an empty buffer, resize enabled
         const char * hello_world = "Hello, world!";
         buffer_t buffer;
 
@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 4: write to a filled buffer, append disabled
+        /// instance 4: write to a filled buffer, resize disabled
         const char * hello_world =      "Hello, world!";
         const char * Kello_world =      "Kello, world!MPKS";
         const char * kello_world_norm = "Kello, world!";
@@ -74,7 +74,7 @@ int main(int argc, char ** argv)
         VERIFY_DATA_OPS_LEN(buffer.write(hello_world, strlen(hello_world), 0),
                             strlen(hello_world));
 
-        VERIFY_DATA_OPS_LEN(buffer.write(hKllo_world, 1, 1), 1);
+        VERIFY_DATA_OPS_LEN(buffer.write(hKllo_world, 1, 1, false), 1);
         if (buffer.to_string() != hKllo_world_norm)
         {
             return EXIT_FAILURE;
@@ -112,7 +112,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 8: read/write(append disabled) offset > data bank size
+        /// instance 8: read/write(resize disabled) offset > data bank size
         buffer_t buffer;
         VERIFY_DATA_OPS_LEN(buffer.read(nullptr, 1, 1), 0);
         VERIFY_DATA_OPS_LEN(buffer.write(nullptr, 1, 1, false), 0);
@@ -123,7 +123,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 9: normal write, append disabled
+        /// instance 9: normal write, resize disabled
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         VERIFY_DATA_OPS_LEN(buffer.write("123", 3, 0, false), 3);
@@ -140,6 +140,17 @@ int main(int argc, char ** argv)
         std::cout << buffer.to_string() << " : " << std::hex << buffer.hash64() << std::endl;
         buffer.write("123", 3, 0, false);
         std::cout << buffer.to_string() << " : " << std::hex << buffer.hash64() << std::endl;
+    }
+
+    {
+        /// instance 11: wanted data bank < buffer size when writing, resize enabled
+        const char * hello_world = "Hello, world!";
+        buffer_t buffer(hello_world, strlen(hello_world));
+        VERIFY_DATA_OPS_LEN(buffer.write("123", 3, 1), 3);
+        if (buffer.to_string() != "H123")
+        {
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;

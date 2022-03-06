@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <map>
 
 /// universal data type
 typedef std::vector <char> data_t;
@@ -30,13 +31,13 @@ public:
     /// @param offset read offset
     htmpfs_size_t read(char * buffer, htmpfs_size_t length, htmpfs_size_t offset);
 
-    /// write(buffer, length, offset)
+    /// write(buffer, length, offset, resize)
     /// @param buffer write buffer
     /// @param length write length
     /// @param offset write offset
-    /// @param append if append == true, append data if length+offset > buffer size
-    ///               if append == false, ignore data beyond buffer size
-    htmpfs_size_t write(const char * buffer, htmpfs_size_t length, htmpfs_size_t offset, bool append = true);
+    /// @param resize if resize == true, resize data if length+offset > buffer size
+    ///               if resize == false, ignore data beyond buffer size
+    htmpfs_size_t write(const char * buffer, htmpfs_size_t length, htmpfs_size_t offset, bool resize = true);
 
     /// convert to std::string
     std::string to_string();
@@ -46,6 +47,9 @@ public:
 
     /// get a hash value for current data bank
     uint64_t hash64();
+
+    /// return size of current data bank
+    htmpfs_size_t size() { return data.size(); }
 };
 
 #endif //HTMPFS_BUFFER_T_H

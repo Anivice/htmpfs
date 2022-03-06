@@ -116,7 +116,7 @@ public:
     }                                                   \
                                                         \
     *output_pipe                                        \
-              << "From " << __FILE__ << ":"             \
+              << "\nFrom " << __FILE__ << ":"           \
               << __LINE__ << ": "                       \
               << __FUNCTION__ << ": ";                  \
 } __asm__("nop") /* suppress IDE "empty statement" warning */
