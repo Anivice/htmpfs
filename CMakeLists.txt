@@ -32,6 +32,9 @@ default_definition(${MARCO_PREFIX}_PREFIX "\"(${PROJECT_NAME}) \"")
 
 # STEMPFS Static Library
 add_library(${PROJECT_NAME}
+        # directory resolver
+        src/directory_resolver.cpp src/include/directory_resolver.h
+
         # uni htmpfs
         src/include/htmpfs.h src/htmpfs.cpp
 
@@ -60,9 +63,11 @@ endfunction()
 
     # Unit tests
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    _add_test(error         "Error test")
-    _add_test(debug         "Debug test")
-    _add_test(buffer_t      "buffer_t test")
-    _add_test(custom_iterator "Test for custom iterator")
-    _add_test(path          "Test for pathname resolver")
+    _add_test(error             "Error test")
+    _add_test(debug             "Debug test")
+    _add_test(buffer_t          "buffer_t test")
+    _add_test(custom_iterator   "Test for custom iterator")
+    _add_test(path              "Test for pathname resolver")
+    _add_test(sig_inode         "Test for single inode")
+    _add_test(dir_resolver      "Test for Directory Resolver")
 endif()
