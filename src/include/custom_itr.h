@@ -70,7 +70,7 @@ bool _custom_it_t<Type>::operator==(_custom_it_t &new_data)
         return false;
     }
 
-    // both are beginning iterator (data doesn't necessarily need to match)
+    // both are beginning iterator (buffer doesn't necessarily need to match)
     if ((new_data.current->at_start and current->at_start))
     {
         return true;

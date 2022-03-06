@@ -14,7 +14,7 @@
 
 int main(int argc, char ** argv)
 {
-    filesystem_t filesystem(2);
+    inode_smi_t filesystem(2);
 
     {
         /// instance 1: bare write, resize enabled, no offset

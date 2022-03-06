@@ -30,7 +30,7 @@ class path_t;
  *  |                |                  |              |
  *  |                |                  |              |
  *  |                |                  |              |
- *  |                |                  |              ----- symbolic iterator, access of data is denied. symbolic
+ *  |                |                  |              ----- symbolic iterator, access of buffer is denied. symbolic
  *  |                |                  |                    iterator contains 'begin', 'end' iterators. these
  *  |                |                  |                    iterators has invalid 'current' member.
  *  |                |                  |                    direct access is allowed
@@ -53,7 +53,7 @@ template < typename Type >
 class _custom_it_t
 {
 private:
-    /// gateway of data and node
+    /// gateway of buffer and node
     _custom_it_t * current = nullptr;
 
     /// only accessible by current. direct access is denied
@@ -76,25 +76,25 @@ private:
     /// only modified by append()
     bool _do_not_de_construct = true;
 
-    /// iterator data, accessible by current
+    /// iterator buffer, accessible by current
     Type data;
 
     /// length of current iterator, only make sense for node_begin
     uint64_t length = 0;
 
 public:
-    /// get data pointer
+    /// get buffer pointer
     Type & operator*();
 
     /// change position of current iterator
     const _custom_it_t operator++(int);
     const _custom_it_t operator++() { return this->operator++(0); }
 
-    /// compare data
+    /// compare buffer
     bool operator == (_custom_it_t & new_data);
     bool operator != (_custom_it_t & new_data);
 
-    /// append new data to iterator
+    /// append new buffer to iterator
     void append(Type &);
 
     /// get iterator ring size
@@ -118,7 +118,7 @@ public:
     _custom_it_t();
 
     /// C++ 11 iterator API
-    _custom_it_t begin(); // data accessible
+    _custom_it_t begin(); // buffer accessible
     _custom_it_t end(); // !!! Please note that this is different from an end node !!!
                         // accessing this node is equivalent to accessing a nullptr
 };

@@ -44,7 +44,7 @@ htmpfs_size_t buffer_t::write(const char *buffer, htmpfs_size_t length, htmpfs_s
         {
             write_size = 0;
         }
-        else if (data.size() < (length + offset)) // write size larger than us, lost some data
+        else if (data.size() < (length + offset)) // write size larger than us, lost some buffer
         {
             write_size = data.size() - offset;
         }
@@ -75,7 +75,7 @@ htmpfs_size_t buffer_t::write(const char *buffer, htmpfs_size_t length, htmpfs_s
         write_size = length;
     }
 
-    // write data
+    // write buffer
     for (htmpfs_size_t i = 0; i < write_size; i++)
     {
         data[offset + i] = buffer[i];

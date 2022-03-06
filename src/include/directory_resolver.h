@@ -38,6 +38,9 @@ public:
     /// refresh from inode
     void refresh();
 
+    /// return current target count in current cache
+    [[nodiscard]] htmpfs_size_t target_count () const { return path.size(); }
+
     /// make a vector by path
     /// @return current dentry vector
     std::vector < path_pack_t > to_vector();
@@ -46,6 +49,11 @@ public:
     /// @param pathname dentry entry
     /// @param inode_id inode id
     void add_path(const std::string & pathname, uint64_t inode_id);
+
+    /// add path to vector
+    /// @param pathname dentry entry
+    /// @param inode_id inode id
+    void remove_path(const std::string & pathname);
 
     /// save curren dentry string
     void save_current();

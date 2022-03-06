@@ -10,7 +10,7 @@
  *  this file implements functions for universal buffer
  */
 
-/// universal data type
+/// universal buffer type
 typedef std::vector <char> data_t;
 typedef uint64_t htmpfs_size_t;
 
@@ -26,9 +26,6 @@ public:
     /// clear buffer
     void clear() { data.clear(); }
 
-    /// get size of buffer
-    [[nodiscard]] htmpfs_size_t get() const { return data.size(); }
-
     /// read(buffer, length, offset)
     /// @param buffer buffer output storage
     /// @param length read length
@@ -39,8 +36,8 @@ public:
     /// @param buffer write buffer
     /// @param length write length
     /// @param offset write offset
-    /// @param resize if resize == true, resize data if length+offset > buffer size
-    ///               if resize == false, ignore data beyond buffer size
+    /// @param resize if resize == true, resize buffer if length+offset > buffer size
+    ///               if resize == false, ignore buffer beyond buffer size
     htmpfs_size_t write(const char * buffer, htmpfs_size_t length, htmpfs_size_t offset, bool resize = true);
 
     /// convert to std::string
@@ -49,11 +46,11 @@ public:
     /// check if buffer is empty
     [[nodiscard]] bool empty() const { return data.empty(); }
 
-    /// get a hash value for current data bank
+    /// get a hash value for current buffer bank
     uint64_t hash64();
 
-    /// return size of current data bank
-    htmpfs_size_t size() { return data.size(); }
+    /// return size of current buffer bank
+    [[nodiscard]] htmpfs_size_t size() const { return data.size(); }
 };
 
 #endif //HTMPFS_BUFFER_T_H

@@ -35,6 +35,11 @@ void delete_elem_of_str_at_head(std::string & str, uint64_t num)
 
 directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t ver)
 {
+    if (!_associated_inode->__is_dentry())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_NOT_A_DIRECTORY);
+    }
+
     associated_inode = _associated_inode;
     access_version = ver;
     refresh();
@@ -42,6 +47,8 @@ directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t 
 
 void directory_resolver_t::refresh()
 {
+    path.clear();
+
     std::string name, inode_id;
     std::string all_path = associated_inode->to_string(access_version);
     char name_buff[129] { };
@@ -131,4 +138,19 @@ bool directory_resolver_t::check_availability(const std::string &pathname)
     }
 
     return true;
+}
+
+void directory_resolver_t::remove_path(const std::string &pathname)
+{
+    for (auto i = path.begin(); i != path.end(); i++)
+    {
+        if (i->pathname == pathname)
+        {
+            path.erase(i);
+            return;
+        }
+    }
+
+    THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_INODE_NOT_FOUND,
+                              "No dentry matching provided name under current parent inode");
 }

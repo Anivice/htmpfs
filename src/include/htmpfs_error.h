@@ -34,6 +34,8 @@ _ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_FILE_OR_DIR, 0xA000000C,     "No such fil
 _ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_BUFFER_NOT_FOUND, 0xA000000D, "Requested buffer not found")
 _ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_INODE_NOT_FOUND, 0xA000000E, "Requested inode not found")
 _ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_VERSION_NOT_FOUND, 0xA000000F, "Requested version not found")
+_ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIR,           0xA0000010,     "Not a directory inode")
+_ADD_ERROR_INFORMATION_(HTMPFS_DIR_NOT_EMPTY,       0xA0000011,     "Directory inode not empty")
 
 /// Filesystem Error Type
 class HTMPFS_error_t : public std::exception

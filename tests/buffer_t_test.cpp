@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 2: constructing with data
+        /// instance 2: constructing with buffer
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         if (buffer.to_string() != hello_world)
@@ -112,7 +112,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 8: read/write(resize disabled) offset > data bank size
+        /// instance 8: read/write(resize disabled) offset > buffer bank size
         buffer_t buffer;
         VERIFY_DATA_OPS_LEN(buffer.read(nullptr, 1, 1), 0);
         VERIFY_DATA_OPS_LEN(buffer.write(nullptr, 1, 1, false), 0);
@@ -143,7 +143,7 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 11: wanted data bank < buffer size when writing, resize enabled
+        /// instance 11: wanted buffer bank < buffer size when writing, resize enabled
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         VERIFY_DATA_OPS_LEN(buffer.write("123", 3, 1), 3);

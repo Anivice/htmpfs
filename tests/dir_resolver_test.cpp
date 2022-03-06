@@ -11,7 +11,7 @@
 
 int main(int argc, char ** argv)
 {
-    filesystem_t filesystem(2);
+    inode_smi_t filesystem(2);
     inode_t inode(2, 0, &filesystem);
     directory_resolver_t directory_resolver(&inode, 0);
     directory_resolver.add_path("lost+found", 0xF3);
@@ -43,6 +43,14 @@ int main(int argc, char ** argv)
     std::cout << directory_resolver2.namei("sys") << std::endl;
 
     if (directory_resolver2.check_availability("sys"))
+    {
+        return EXIT_FAILURE;
+    }
+
+    directory_resolver.remove_path("sys");
+    directory_resolver.save_current();
+    directory_resolver2.refresh();
+    if (!directory_resolver2.check_availability("sys"))
     {
         return EXIT_FAILURE;
     }

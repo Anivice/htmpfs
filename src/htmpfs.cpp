@@ -9,8 +9,8 @@
         THROW_HTMPFS_ERROR_STDERR(HTMPFS_BUFFER_SHORT_WRITE); \
     } __asm__("nop")
 
-inode_t::inode_t(uint64_t _block_size, uint32_t _inode_id, filesystem_t * _filesystem)
-: block_size(_block_size), inode_id(_inode_id), filesystem(_filesystem)
+inode_t::inode_t(uint64_t _block_size, uint32_t _inode_id, inode_smi_t * _filesystem, bool _is_dentry)
+: block_size(_block_size), inode_id(_inode_id), filesystem(_filesystem), is_dentry(_is_dentry)
 {
     // create root snapshot
     block_map.emplace(0, std::vector < buffer_result_t >());
@@ -20,10 +20,10 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
 {
     auto &snapshot_0_block_list = block_map.at(0);
 
-    // if resizing data
+    // if resizing buffer
     if (resize)
     {
-        // check data bank availability
+        // check buffer bank availability
         htmpfs_size_t current_bank_size = snapshot_0_block_list.size() * block_size;
         htmpfs_size_t length_after_write = offset + length;
 
@@ -36,11 +36,11 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
             {
                 // emplace lost buffer
                 auto result = filesystem->request_buffer_allocation();
-//                auto result = buffer_result_t { .id = 0x00, .data = new buffer_t };
+//                auto result = buffer_result_t { .id = 0x00, .buffer = new buffer_t };
                 snapshot_0_block_list.emplace_back(result);
             }
         }
-        else // data bank is larger than wanted size
+        else // buffer bank is larger than wanted size
         {
             htmpfs_size_t current_bank_count = snapshot_0_block_list.size();
             htmpfs_size_t bank_count_after_write =
@@ -133,7 +133,7 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
     else // resize disabled
     {
         htmpfs_size_t write_size;
-        if (offset > current_data_size(0)) // write beyond data bank
+        if (offset > current_data_size(0)) // write beyond buffer bank
         {
             return 0;
         }
@@ -223,7 +223,7 @@ htmpfs_size_t inode_t::read(snapshot_ver_t version, char *buffer, htmpfs_size_t 
     auto &snapshot_block_list = block_map.at(version);
 
     htmpfs_size_t read_size;
-    if (offset > current_data_size(version)) // read beyond data bank
+    if (offset > current_data_size(version)) // read beyond buffer bank
     {
         return 0;
     }
@@ -347,24 +347,24 @@ htmpfs_size_t inode_t::current_data_size(snapshot_ver_t version)
     return size;
 }
 
-buffer_result_t filesystem_t::request_buffer_allocation()
+buffer_result_t inode_smi_t::request_buffer_allocation()
 {
     auto id = get_free_id(buffer_pool);
 
     buffer_pool.emplace(id, buffer_pack_t
             {
                     .link_count = 1,
-                    .data = buffer_t()
+                    .buffer = buffer_t()
             }
     );
 
     return buffer_result_t {
         .id = id,
-        .data = &buffer_pool.at(id).data
+        .data = &buffer_pool.at(id).buffer
     };
 }
 
-void filesystem_t::request_buffer_deletion(buffer_id_t buffer_id)
+void inode_smi_t::request_buffer_deletion(buffer_id_t buffer_id)
 {
     // attempt to delete a non-exist buffer
     auto it = buffer_pool.find(buffer_id);
@@ -373,10 +373,14 @@ void filesystem_t::request_buffer_deletion(buffer_id_t buffer_id)
         THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
     }
 
-    buffer_pool.erase(it);
+    if (it->second.link_count == 1) {
+        buffer_pool.erase(it);
+    } else {
+        it->second.link_count -= 1;
+    }
 }
 
-inode_id_t filesystem_t::get_inode_by_path(const std::string & path, snapshot_ver_t version)
+inode_id_t inode_smi_t::get_inode_by_path(const std::string & path, snapshot_ver_t version)
 {
     path_t vec_path(path);
     inode_id_t current_inode = 0;
@@ -387,23 +391,36 @@ inode_id_t filesystem_t::get_inode_by_path(const std::string & path, snapshot_ve
         if (i.empty()) { continue; }
 
         // get next level of inode
-        directory_resolver_t directoryResolver(&inode_pool.at(current_inode), version);
+        directory_resolver_t directoryResolver(&inode_pool.at(current_inode).inode, version);
         current_inode = directoryResolver.namei(i);
     }
 
     return current_inode;
 }
 
-filesystem_t::filesystem_t(htmpfs_size_t _block_size)
+inode_smi_t::inode_smi_t(htmpfs_size_t _block_size)
 : block_size(_block_size)
 {
-    inode_pool.emplace(0, inode_t(_block_size, 0, this));
-    filesystem_root = &inode_pool.at(0);
+    inode_pool.emplace
+    (
+            0,
+            inode_pack_t
+            {
+                .link_count = 1,
+                .inode = inode_t(
+                        _block_size,
+                        0,
+                        this,
+                        true)
+            }
+    );
 
+    filesystem_root = &inode_pool.at(0).inode;
 }
 
-inode_id_t filesystem_t::make_child_dentry_under_parent(inode_id_t parent_inode_id,
-                                                       const std::string & name)
+inode_id_t inode_smi_t::make_child_dentry_under_parent(inode_id_t parent_inode_id,
+                                                       const std::string & name,
+                                                       bool is_dir)
 {
     // make sure parent inode is valid
     auto it = inode_pool.find(parent_inode_id);
@@ -413,7 +430,7 @@ inode_id_t filesystem_t::make_child_dentry_under_parent(inode_id_t parent_inode_
     }
 
     // get parent inode pointer
-    inode_t * parent_inode = &it->second;
+    inode_t * parent_inode = &it->second.inode;
     // directory resolver
     directory_resolver_t directoryResolver(parent_inode, 0);
 
@@ -425,12 +442,96 @@ inode_id_t filesystem_t::make_child_dentry_under_parent(inode_id_t parent_inode_
 
     // make a new inode
     auto new_inode_id = get_free_id(inode_pool);
-    inode_pool.emplace(new_inode_id, inode_t(block_size, new_inode_id, this));
+    inode_pool.emplace(
+            new_inode_id,
+            inode_pack_t
+            {
+                .link_count = 1,
+                .inode = inode_t(block_size, new_inode_id, this, is_dir)
+            }
+    );
+
     directoryResolver.add_path(name, new_inode_id);
     directoryResolver.save_current();
 }
 
-void filesystem_t::remove_child_dentry_under_parent(inode_id_t inode_id)
+void inode_smi_t::link_buffer(buffer_id_t buffer_id)
 {
+    // attempt to delete a non-exist buffer
+    auto it = buffer_pool.find(buffer_id);
+    if (it == buffer_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
+    }
 
+    it->second.link_count += 1;
+}
+
+void inode_smi_t::link_inode(inode_id_t inode_id)
+{
+    // attempt to delete a non-exist buffer
+    auto it = inode_pool.find(inode_id);
+    if (it == inode_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_INODE_NOT_FOUND);
+    }
+
+    it->second.link_count += 1;
+}
+
+inode_t *inode_smi_t::get_inode_by_id(inode_id_t inode_id)
+{
+    auto it = inode_pool.find(inode_id);
+    if (it == inode_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_INODE_NOT_FOUND);
+    }
+
+    return &it->second.inode;
+}
+
+void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, const std::string &name)
+{
+    // make sure parent inode is valid
+    auto it = inode_pool.find(parent_inode_id);
+    if (it == inode_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_INODE_NOT_FOUND);
+    }
+
+    // get parent inode pointer
+    inode_t * parent_inode = &it->second.inode;
+    // directory resolver
+    directory_resolver_t directoryResolver(parent_inode, 0);
+
+    auto target_id = directoryResolver.namei(name);
+    directoryResolver.remove_path(name);
+    directoryResolver.save_current();
+    auto target_it = inode_pool.find(target_id);
+
+    try
+    {
+        directory_resolver_t if_target_is_dir(&target_it->second.inode, 0);
+        if (if_target_is_dir.target_count() != 0)
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_DIR_NOT_EMPTY);
+        }
+    }
+    catch (HTMPFS_error_t & error)
+    {
+        // target is a directory, but something else failed
+        if (error.my_errcode() != HTMPFS_NOT_A_DIRECTORY)
+        {
+            throw;
+        }
+    }
+
+    // remove link
+    target_it->second.link_count -= 1;
+
+    // if no link is associated to this inode, remove it
+    if (target_it->second.link_count == 0)
+    {
+        inode_pool.erase(target_it);
+    }
 }
