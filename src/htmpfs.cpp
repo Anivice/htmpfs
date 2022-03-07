@@ -10,7 +10,7 @@
         THROW_HTMPFS_ERROR_STDERR(HTMPFS_BUFFER_SHORT_WRITE); \
     } __asm__("nop")
 
-inode_t::inode_t(uint64_t _block_size, uint32_t _inode_id, inode_smi_t * _filesystem, bool _is_dentry)
+inode_t::inode_t(uint64_t _block_size, inode_id_t _inode_id, inode_smi_t * _filesystem, bool _is_dentry)
 : block_size(_block_size), inode_id(_inode_id), filesystem(_filesystem), is_dentry(_is_dentry)
 {
     // create root snapshot
@@ -23,6 +23,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
                              bool resize,
                              directory_resolver_t::__dentry_only dentry_only)
 {
+    /**                     SANITY CHECK                    **/
     // if is_dir == true, write is only accessible by directory_resolver::save_current()
     if (__is_dentry())
     {
@@ -37,6 +38,8 @@ htmpfs_size_t inode_t::write(const char *buffer,
         return 0;
     }
 
+    /**                     SANITY CHECK END                    **/
+
     auto &snapshot_0_block_list = block_map.at(0);
 
     // if resizing buffer
@@ -46,11 +49,14 @@ htmpfs_size_t inode_t::write(const char *buffer,
         htmpfs_size_t current_bank_size = snapshot_0_block_list.size() * block_size;
         htmpfs_size_t length_after_write = offset + length;
 
-        // meet bank size shortage
+        // meet bank size shortage, i.e., grow bank at the end of the buffer list
         if (current_bank_size < length_after_write)
         {
+            // first, calculate how much additional buffer is required
             htmpfs_size_t wanted_size = length_after_write - current_bank_size;
             htmpfs_size_t wanted_buffer_count = wanted_size / block_size + (wanted_size % block_size != 0);
+
+            // append these additional buffer
             for (htmpfs_size_t i = 0; i < wanted_buffer_count; i++)
             {
                 // emplace lost buffer
@@ -58,17 +64,95 @@ htmpfs_size_t inode_t::write(const char *buffer,
 //                auto result = buffer_result_t { .id = 0x00, .buffer = new buffer_t };
                 snapshot_0_block_list.emplace_back(result);
             }
+
+            // second, check how many buffer (since offset) need to be reallocated
+            // because of snapshot
+            // before we do that, let's see how much existing buffer needs to be modified
+            htmpfs_size_t existing_buffer_pending_for_modification_start = offset / block_size;
+            // end - modification-starting-buffer
+            htmpfs_size_t existing_buffer_pending_for_modification_count =
+                    snapshot_0_block_list.size() - existing_buffer_pending_for_modification_start;
+
+            // check all buffers pending for modification
+            // reallocate buffer when detecting snapshot-frozen buffers
+            for (uint64_t i = 0;
+                i < existing_buffer_pending_for_modification_count;
+                i++)
+            {
+                // if frozen buffer detected
+                if ((block_map.at(0)[i + existing_buffer_pending_for_modification_start])._is_snapshoted)
+                {
+                    // read data from old buffer
+                    char * tmp = new char [block_size];
+                    auto frozen_buffer =
+                            &block_map.at(0)[i + existing_buffer_pending_for_modification_start];
+                    uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
+
+                    // allocate new buffer
+                    auto new_buffer = filesystem->request_buffer_allocation();
+                    new_buffer.data->write(tmp, len, 0);
+
+                    // replace buffer
+                    block_map.at(0)[i + existing_buffer_pending_for_modification_start] = new_buffer;
+
+                    delete []tmp;
+                }
+            }
+
         }
         else // buffer bank is larger than wanted size
         {
+            // first, see how much buffer is pending for deletion
             htmpfs_size_t current_bank_count = snapshot_0_block_list.size();
             htmpfs_size_t bank_count_after_write =
                     length_after_write / block_size + (length_after_write % block_size != 0);
             htmpfs_size_t lost_buffer_count = current_bank_count - bank_count_after_write;
-            for (htmpfs_size_t i = 0; i < lost_buffer_count; i++) {
-                // emplace lost buffer
-                filesystem->request_buffer_deletion((--snapshot_0_block_list.end())->id);
+
+            // check frozen buffer in lost buffer list
+            for (htmpfs_size_t i = 0; i < lost_buffer_count; i++)
+            {
+                auto last_buffer = *(--(snapshot_0_block_list.end()));
+
+                // if not a snapshot frozen buffer (now becomes a owner-less buffer)
+                if (!last_buffer._is_snapshoted)
+                {
+                    // delete lost buffer
+                    filesystem->request_buffer_deletion(last_buffer.id);
+                }
+
+                // remove buffer in the buffer list
                 snapshot_0_block_list.pop_back();
+            }
+
+            // second, check the buffer pending for modification
+            htmpfs_size_t existing_buffer_pending_for_modification_start = offset / block_size;
+            // end - modification-starting-buffer
+            htmpfs_size_t existing_buffer_pending_for_modification_end
+                = (offset + length) / block_size + (((offset + length) % block_size) != 0);
+
+            // check all buffers pending for modification
+            // reallocate buffer when detecting snapshot-frozen buffers
+            for (uint64_t i = existing_buffer_pending_for_modification_start;
+                 i < existing_buffer_pending_for_modification_end;
+                 i++)
+            {
+                // if frozen buffer detected
+                if ((block_map.at(0)[i])._is_snapshoted)
+                {
+                    // read data from old buffer
+                    char * tmp = new char [block_size];
+                    auto frozen_buffer = &block_map.at(0)[i];
+                    uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
+
+                    // allocate new buffer
+                    auto new_buffer = filesystem->request_buffer_allocation();
+                    new_buffer.data->write(tmp, len, 0);
+
+                    // replace buffer
+                    block_map.at(0)[i] = new_buffer;
+
+                    delete []tmp;
+                }
             }
         }
 
@@ -163,6 +247,37 @@ htmpfs_size_t inode_t::write(const char *buffer,
         else // write length OK
         {
             write_size = length;
+        }
+
+        // check the buffer pending for modification
+        htmpfs_size_t existing_buffer_pending_for_modification_start = offset / block_size;
+        // end - modification-starting-buffer
+        htmpfs_size_t existing_buffer_pending_for_modification_end
+                = (offset + write_size) / block_size + (((offset + write_size) % block_size) != 0);
+
+        // check all buffers pending for modification
+        // reallocate buffer when detecting snapshot-frozen buffers
+        for (uint64_t i = existing_buffer_pending_for_modification_start;
+             i < existing_buffer_pending_for_modification_end;
+             i++)
+        {
+            // if frozen buffer detected
+            if ((block_map.at(0)[i])._is_snapshoted)
+            {
+                // read data from old buffer
+                char * tmp = new char [block_size];
+                auto frozen_buffer = &block_map.at(0)[i];
+                uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
+
+                // allocate new buffer
+                auto new_buffer = filesystem->request_buffer_allocation();
+                new_buffer.data->write(tmp, len, 0);
+
+                // replace buffer
+                block_map.at(0)[i] = new_buffer;
+
+                delete []tmp;
+            }
         }
 
         // =================================================================== //
@@ -387,13 +502,14 @@ buffer_result_t inode_smi_t::request_buffer_allocation()
     buffer_pool.emplace(id, buffer_pack_t
             {
                     .link_count = 1,
-                    .buffer = buffer_t()
+                    .buffer = buffer_t(),
             }
     );
 
     return buffer_result_t {
         .id = id,
-        .data = &buffer_pool.at(id).buffer
+        .data = &buffer_pool.at(id).buffer,
+        .__is_snapshoted = 0
     };
 }
 
@@ -652,6 +768,17 @@ std::vector < std::string > inode_smi_t::export_as_filesystem_map(snapshot_ver_t
     return filesystem_map;
 }
 
+buffer_t *inode_smi_t::get_buffer_by_id(buffer_id_t buffer_id)
+{
+    auto it = buffer_pool.find(buffer_id);
+    if (it == buffer_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
+    }
+
+    return &it->second.buffer;
+}
+
 snapshot_ver_t inode_smi_t::create_snapshot_volume()
 {
     return 0;
@@ -661,5 +788,6 @@ void inode_smi_t::delete_snapshot_volume(snapshot_ver_t version)
 {
 
 }
+
 
 

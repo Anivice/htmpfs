@@ -75,4 +75,5 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
              "Test for filesystem snapshot")
     _add_test(filesystem
             "Test for filesystem functionality")
+    _add_test(sig_inode_snapshot "Test for single inode snapshot I/O")
 endif()

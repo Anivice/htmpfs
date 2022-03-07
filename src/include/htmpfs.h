@@ -21,9 +21,16 @@
 #define FILESYSTEM_ROOT_INODE_NUMBER    0x00
 #define FILESYSTEM_CUR_MODIFIABLE_VER   0x00
 
-typedef uint32_t snapshot_ver_t;
+typedef uint64_t snapshot_ver_t;
 typedef uint64_t buffer_id_t;
 typedef uint64_t inode_id_t;
+struct unique_buffer_pkg_id_t
+{
+    snapshot_ver_t version;
+    buffer_id_t    buffer_id;
+    inode_id_t     inode_id;
+    uint64_t       pkg_link_count;
+};
 
 class inode_smi_t;
 
@@ -31,13 +38,14 @@ struct buffer_result_t
 {
     buffer_id_t id;
     buffer_t * data;
+    uint64_t _is_snapshoted:1;
 };
 
 class inode_t
 {
 private:
     htmpfs_size_t block_size;
-    uint32_t inode_id;
+    inode_id_t    inode_id;
     inode_smi_t * filesystem;
 
     bool is_dentry = false;
@@ -63,7 +71,7 @@ public:
 
     /// initialize block
     explicit inode_t(htmpfs_size_t _block_size,
-                     uint32_t _inode_id,
+                     inode_id_t    _inode_id,
                      inode_smi_t * _filesystem,
                      bool _is_dentry = false);
 
@@ -106,9 +114,68 @@ public:
 /*
  * Index-NODE System Management Interface
  *
+ * Index-NODE System Management Interface, or inode_smi, is used for inode management.
+ * inode_smi supports create/delete inodes, create/delete snapshot volumes.
+ *
+ * 1. CREATE/DELETE inode
+ *      inode_smi is initialized with a filesystem root, which is marked as dentry inode
+ *      when creating inode, user must provide a valid parent inode number and a valid child
+ *      name. this creation process only write a dentry in parent inode and allocate a free inode in
+ *      inode pool (or increase inode link count).
+ *
+ *      similar to creating inode, deleting an inode will also need a parent inode number and a valid child name
+ *      inode will be removed from the inode pool or link count will be decreased by one. dentry will also
+ *      be removed from parent inode.
+ *
+ *      inode_smi supports full path parse (i.e. pathname like "/etc", "/usr/bin", "/snap/bare/current/dev")
+ *      you can obtain a valid inode number as long as the provided pathname is valid.
+ *      you can directly access inode by using inode_id, no additional parse required.
+ *
+ *      NOTE that inode can be linked to multiple dentries, so inode will remain valid as long as
+ *      link count > 0 (inode will be automatically removed when link_count == 0)
+ *
+ * 2. SNAPSHOT VOLUMES
+ *      a). process of creating a snapshot volume
+ *          say that we have a filesystem tree as following:
+ *                                       /
+ *                                       |
+ *                  -----------------------------------------------
+ *                  |                |               |            |
+ *               etc/             usr/            bin/         lib/
+ *                  |                |               |            |
+ *                  |           ----------           |          libc.so
+ *                  |           |        |           |            +
+ *             ----------    bin/     lib/           |            +
+ *             |        |       |        |           |            +
+ *             |        |       |      libc.so ++++++++++++++++++++ (hard link)
+ *             |        |       |                    |
+ *             |        |       |                   bash
+ *             |        |       |                    +
+ *          X11/      ssh/     bash ++++++++++++++++++ (hard link)
+ *             |         |
+ *             |      ssh.conf
+ *             |
+ *       --------------
+ *       |            |
+ *  nvidia.conf   intel.conf
+ *
+ *          the filesystem layout would be:
+ *          /
+ *          /etc
+ *          /etc/X11
+ *          /etc/ssh
+ *          /etc/X11/nvidia.conf
+ *          /etc/X11/intel.conf
+ *          /etc/ssh/ssh.conf
+ *          /usr
+ *          /usr/bin
+ *          /usr/lib
+ *          /usr/bin/bash
+ *          /usr/lib/libc.so
+ *          /bin/bash
+ *          /lib/libc.so
+ *
  * */
-
-class filesystem_map_t;
 
 class inode_smi_t
 {
@@ -160,6 +227,11 @@ private:
     /// increase link of specific inode
     void link_inode(inode_id_t inode_id);
 
+    /// get buffer by buffer id
+    /// @param buffer_id buffer id
+    /// @return pointer to buffer
+    buffer_t * get_buffer_by_id(buffer_id_t buffer_id);
+
 public:
     explicit inode_smi_t(htmpfs_size_t _block_size);
 
@@ -198,7 +270,8 @@ public:
 };
 
 template<class Typename>
-uint64_t inode_smi_t::get_free_id(Typename & pool) {
+uint64_t inode_smi_t::get_free_id(Typename & pool)
+{
     if (pool.size() == pool.max_size()) {
         THROW_HTMPFS_ERROR_STDERR(HTMPFS_BUFFER_ID_DEPLETED);
     }
