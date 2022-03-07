@@ -1,6 +1,7 @@
 #include <directory_resolver.h>
 #include <htmpfs_error.h>
 #include <htmpfs.h>
+#include <debug.h>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -24,11 +25,14 @@ inline Type string_to_type(const std::string & str)
     return ret;
 }
 
-void delete_elem_of_str_at_head(std::string & str, uint64_t num)
+template < typename Type >
+inline void delete_elem_of_str_at_head(std::string & str)
 {
-    for (uint64_t i = 0; i < num; i++)
+    for (uint64_t i = 0; i < sizeof(Type); i++)
     {
-        str.erase(str.begin());
+        if (!str.empty()) {
+            str.erase(str.begin());
+        }
     }
 }
 
@@ -48,6 +52,11 @@ void directory_resolver_t::refresh()
 {
     path.clear();
 
+    if (associated_inode->current_data_size(access_version) == 0)
+    {
+        return;
+    }
+
     std::string name, inode_id;
     std::string all_path = associated_inode->to_string(access_version);
     char name_buff[129] { };
@@ -60,7 +69,7 @@ void directory_resolver_t::refresh()
 
     // get save pack count, which is at the head of the string
     auto save_pack_count = string_to_type<uint64_t>(all_path);
-    delete_elem_of_str_at_head(all_path, sizeof(uint64_t));
+    delete_elem_of_str_at_head<uint64_t>(all_path);
 
     for (uint64_t i = 0; i < save_pack_count; i++)
     {
@@ -68,7 +77,7 @@ void directory_resolver_t::refresh()
         path_pack_t runtime_path_pack;
 
         save_pack = string_to_type<flat_path_pack_t>(all_path);
-        delete_elem_of_str_at_head(all_path, sizeof(save_pack));
+        delete_elem_of_str_at_head<flat_path_pack_t>(all_path);
         strcpy(name_buff, save_pack.pathname);
         runtime_path_pack.pathname = name_buff;
         runtime_path_pack.inode_id = save_pack.inode_id;
@@ -86,7 +95,9 @@ void directory_resolver_t::add_path(const std::string & pathname, uint64_t inode
 {
     for (const auto& i : path)
     {
-        if (i.pathname == pathname) {
+        if (!memcmp(i.pathname.c_str(), pathname.c_str(),
+                    MIN(pathname.length(), i.pathname.length())))
+        {
             THROW_HTMPFS_ERROR_STDERR(HTMPFS_DOUBLE_MKPATHNAME);
         }
     }
@@ -125,14 +136,16 @@ void directory_resolver_t::save_current()
         ret += type_to_string(save_pack);
     }
 
-    associated_inode->write(ret.c_str(), ret.length(), 0);
+    associated_inode->write(ret.c_str(), ret.length(), 0,
+                            true, __dentry_only(true));
 }
 
 bool directory_resolver_t::check_availability(const std::string &pathname)
 {
     for (const auto& i : path)
     {
-        if (i.pathname == pathname)
+        if (!memcmp(i.pathname.c_str(), pathname.c_str(),
+                    MIN(i.pathname.length(), pathname.length())))
         {
             return false;
         }
@@ -145,7 +158,8 @@ void directory_resolver_t::remove_path(const std::string &pathname)
 {
     for (auto i = path.begin(); i != path.end(); i++)
     {
-        if (i->pathname == pathname)
+        if (!memcmp(i->pathname.c_str(), pathname.c_str(),
+                    MIN(i->pathname.length(), pathname.length())))
         {
             path.erase(i);
             return;

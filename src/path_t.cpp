@@ -10,6 +10,11 @@ path_t::path_t(const std::string & given_path)
     {
         if (i == '/')
         {
+            if (cur.empty())
+            {
+                continue;
+            }
+
             pathname.append(cur);
             cur.clear();
             continue;

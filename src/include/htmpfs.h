@@ -51,9 +51,11 @@ public:
     /// public accessible dentry flag
     [[nodiscard]] bool __is_dentry() const { return is_dentry; }
 
-    /// dentry override
+    /// dentry status override
     /// !! FOR DEBUG PURPOSE ONLY !!
+#ifdef CMAKE_BUILD_DEBUG
     void __override_dentry_flag(bool status) { is_dentry = status; }
+#endif // CMAKE_BUILD_DEBUG
 
     /// file attributes. NOTE: this attribute is not maintained by any member of inode_t
     /// if you wish to use this attribute, you have to update the information manually
@@ -72,15 +74,25 @@ public:
     /// @param offset write offset
     /// @param resize if append == true, append buffer if length+offset > buffer size
     ///               if append == false, ignore buffer beyond buffer size
+    /// @param dentry_only set status of current operation, true if inode is dentry
+    ///                    this operation can only override by directory_resolver_t
     /// @return length of buffer written
-    htmpfs_size_t write(const char * buffer, htmpfs_size_t length, htmpfs_size_t offset, bool resize = true);
+    htmpfs_size_t write(const char * buffer,
+                        htmpfs_size_t length,
+                        htmpfs_size_t offset,
+                        bool resize = true,
+                        directory_resolver_t::__dentry_only dentry_only =
+                                directory_resolver_t::__dentry_only(false));
 
     /// read(buffer, length, offset)
     /// @param buffer read buffer
     /// @param length read length
     /// @param offset read offset
     /// @return length of buffer read
-    htmpfs_size_t read(snapshot_ver_t version, char * buffer, htmpfs_size_t length, htmpfs_size_t offset);
+    htmpfs_size_t read(snapshot_ver_t version,
+                       char * buffer,
+                       htmpfs_size_t length,
+                       htmpfs_size_t offset);
 
     /// output buffer as string
     std::string to_string(snapshot_ver_t version);
@@ -180,7 +192,7 @@ public:
 
     /// export current filesystem layout as filesystem map
     /// @retuen filesystem layout
-    filesystem_map_t export_as_filesystem_map();
+    std::vector < std::string > export_as_filesystem_map(snapshot_ver_t version);
 
     friend inode_t;
 };
@@ -198,13 +210,5 @@ uint64_t inode_smi_t::get_free_id(Typename & pool) {
 
     return id;
 }
-
-class filesystem_map_t
-{
-public:
-    std::map < std::string, filesystem_map_t > children;
-    bool is_dentry = false;
-    void makep(const std::string & pathname, bool is_dir);
-};
 
 #endif //HTMPFS_HTMPFS_H

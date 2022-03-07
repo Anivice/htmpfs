@@ -118,5 +118,22 @@ int main(int argc, char ** argv)
         VERIFY_DATA_OPS_LEN(inode.read(0, nullptr, 9, 12), 0);
     }
 
+    {
+        /// instance 13: invalid write access
+        inode_t inode(2, 0, &filesystem, true);
+
+        try
+        {
+            inode.write(nullptr, 0, 0, true);
+        }
+        catch (HTMPFS_error_t & err)
+        {
+            if (err.my_errcode() != HTMPFS_INVALID_WRITE_INVOKE)
+            {
+                return EXIT_FAILURE;
+            }
+        }
+    }
+
     return EXIT_SUCCESS;
 }

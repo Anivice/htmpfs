@@ -13,6 +13,7 @@ class inode_t;
 
 class directory_resolver_t
 {
+public:
     struct path_pack_t
     {
         std::string pathname;
@@ -25,9 +26,23 @@ class directory_resolver_t
         uint64_t inode_id {};
     };
 
+private:
+
     std::vector < path_pack_t > path;
     inode_t * associated_inode;
     uint64_t access_version;
+
+    class __dentry_only
+    {
+    private:
+        bool is_dentry_only;
+
+        explicit __dentry_only(bool _is_dentry_only) : is_dentry_only(_is_dentry_only) { };
+
+    public:
+        friend directory_resolver_t;
+        friend inode_t;
+    };
 
 public:
     /// C++ 11 APIs
@@ -72,6 +87,8 @@ public:
     /// @return availability status. true means pathname is available,
     ///         false means pathname is occupied
     bool check_availability(const std::string & pathname);
+
+    friend inode_t;
 };
 
 #endif //HTMPFS_DIRECTORY_RESOLVER_H

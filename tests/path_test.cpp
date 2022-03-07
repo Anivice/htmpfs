@@ -31,5 +31,12 @@ int main(int argc, char ** argv)
         VERIFY_DATA(path2.size(), 1);
     }
 
+    {
+        /// instance 2: path ends with '/'
+
+        path_t path2("/etc/");
+        VERIFY_DATA(path2.size(), 2);
+    }
+
     return EXIT_SUCCESS;
 }

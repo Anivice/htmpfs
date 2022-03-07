@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <htmpfs_error.h>
 #include <directory_resolver.h>
+#include <sstream>
 
 #define VERIFY_DATA_OPS_LEN(operation, len) \
     if ((operation) != len)                 \
@@ -16,8 +17,21 @@ inode_t::inode_t(uint64_t _block_size, uint32_t _inode_id, inode_smi_t * _filesy
     block_map.emplace(0, std::vector < buffer_result_t >());
 }
 
-htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_size_t offset, bool resize)
+htmpfs_size_t inode_t::write(const char *buffer,
+                             htmpfs_size_t length,
+                             htmpfs_size_t offset,
+                             bool resize,
+                             directory_resolver_t::__dentry_only dentry_only)
 {
+    // if is_dir == true, write is only accessible by directory_resolver::save_current()
+    if (__is_dentry())
+    {
+        if (!dentry_only.is_dentry_only)
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_WRITE_INVOKE);
+        }
+    }
+
     if (!length)
     {
         return 0;
@@ -223,7 +237,10 @@ htmpfs_size_t inode_t::write(const char *buffer, htmpfs_size_t length, htmpfs_si
     }
 }
 
-htmpfs_size_t inode_t::read(snapshot_ver_t version, char *buffer, htmpfs_size_t length, htmpfs_size_t offset)
+htmpfs_size_t inode_t::read(snapshot_ver_t version,
+                            char *buffer,
+                            htmpfs_size_t length,
+                            htmpfs_size_t offset)
 {
     if (!length)
     {
@@ -439,6 +456,14 @@ inode_id_t inode_smi_t::make_child_dentry_under_parent(inode_id_t parent_inode_i
                                                        const std::string & name,
                                                        bool is_dir)
 {
+    for (const auto & i : name)
+    {
+        if (i == '/' || i < 0x1F || i >= 0x7F)
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+    }
+
     // make sure parent inode is valid
     auto it = inode_pool.find(parent_inode_id);
     if (it == inode_pool.end())
@@ -555,42 +580,76 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
     }
 }
 
-filesystem_map_t inode_smi_t::export_as_filesystem_map()
+// don't touch this
+// i literally modified nothing and it doesn't work for some reason. don't change it
+// or you are going to waste more time than you can think of
+std::vector < std::string > inode_smi_t::export_as_filesystem_map(snapshot_ver_t version)
 {
-    filesystem_map_t sys_map;
-
+    std::vector < std::string > filesystem_map;
     /* traverse filesystem
      * first, a function that shows all targets within the current directory
      * */
 
-
-
-}
-
-void filesystem_map_t::makep(const std::string &pathname, bool is_dir)
-{
-    path_t vec_path(pathname);
-
-    filesystem_map_t * dir = this;
-    for (const auto& i : vec_path)
+    // get inode pathname package by parent inode
+    // basically list all inode entries in parent inode
+    auto get_sub_inode_list_by_parent =
+            [&](inode_t * parent_inode)->std::vector < directory_resolver_t::path_pack_t >
     {
-        // skip root
-        if (i.empty()) { continue; }
+        directory_resolver_t directoryResolver(parent_inode, version);
+        return directoryResolver.to_vector();
+    };
 
-        // find child
-        auto it = dir->children.find(i);
+    auto make_path_for_current_dentry =
+            [&](const std::string& pathname_prefix)->std::vector < std::string >
+    {
+        std::vector < std::string > ret;
+        std::vector < directory_resolver_t::path_pack_t > current_sub_inode_list;
 
-        // child not found, then create a new child
-        if (it == dir->children.end())
+        // get parent inode
+        auto * parent_inode =
+                get_inode_by_id(
+                        get_inode_id_by_path((pathname_prefix),
+                                                    version)
+                );
+
+        // check if parent inode is a dentry inode
+        if (!parent_inode->__is_dentry())
         {
-            dir->children.emplace(i, filesystem_map_t { .is_dentry = is_dir });
+            return {};
         }
 
-        // child found
-        dir = &it->second;
-    }
+        // get sub inode list under dentry inode
+        current_sub_inode_list = get_sub_inode_list_by_parent(parent_inode);
 
+        // make pathname
+        for (const auto & i : current_sub_inode_list)
+        {
+//            sys_map.emplace_back(pathname_prefix + "/" + i.pathname);
+//            std::cout << pathname_prefix + i.pathname << std::endl;
+            filesystem_map.emplace_back(pathname_prefix + i.pathname);
+            ret.emplace_back(pathname_prefix + i.pathname);
+        }
 
+        return ret;
+    };
+
+    // recursively check filesystem tree
+    std::function < void (const std::vector < std::string > &) >
+            recursion_check = [&](const std::vector < std::string /* full pathname */ >& dentry_list)->void
+    {
+        for (const auto &i: dentry_list)
+        {
+            if (i == "/") {
+                recursion_check(make_path_for_current_dentry("/"));
+            } else {
+                recursion_check(make_path_for_current_dentry(i + "/"));
+            }
+        }
+    };
+
+    recursion_check(std::vector <std::string>({"/"}));
+
+    return filesystem_map;
 }
 
 snapshot_ver_t inode_smi_t::create_snapshot_volume()

@@ -139,7 +139,7 @@ public:
     iterator        begin   ()                      { return pathname.begin();  }
     iterator        end     ()                      { return pathname.end();    }
     htmpfs_size_t   size    ()                      { return pathname.size();   }
-    iterator        last    ()                      { pathname.last();          }
+    iterator        last    ()                      { return pathname.last();   }
 };
 
 #include <custom_itr.h>
