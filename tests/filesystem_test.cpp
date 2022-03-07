@@ -57,7 +57,7 @@ int main()
 {
     // generate a huge amount of random data
     const std::string data = gen_random_data(5391);
-
+#ifdef CMAKE_BUILD_DEBUG
     {
         /// instance 1: filesystem bare I/O capability
 
@@ -74,7 +74,7 @@ int main()
                               ->to_string(0),
                     data);
     }
-
+#endif // CMAKE_BUILD_DEBUG
     {
         /// instance 2: create a sub directory, write data, both successful and failed
 
@@ -214,6 +214,8 @@ int main()
         filesystem.export_as_filesystem_map(0);
     }
 
+#ifdef CMAKE_BUILD_DEBUG
+
     {
         /// mixed operation, random pathname + data
 
@@ -317,6 +319,6 @@ int main()
             }
         }
     }
-
+#endif // CMAKE_BUILD_DEBUG
     return EXIT_SUCCESS;
 }

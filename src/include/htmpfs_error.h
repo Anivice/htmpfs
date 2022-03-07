@@ -39,6 +39,7 @@ _ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_READ,       0xA0000012,     "Buffer 
 _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_DENTRY_NAME,     0xA0000013,     "Invalid dentry name")
 _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_WRITE_INVOKE,    0xA0000014,     "Invalid write invoke")
 _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_READ_INVOKE,     0xA0000015,     "Invalid read invoke")
+_ADD_ERROR_INFORMATION_(HTMPFS_CANNOT_REMOVE_ROOT,      0xA0000016,     "Cannot remove root inode")
 
 /// Filesystem Error Type
 class HTMPFS_error_t : public std::exception
@@ -56,8 +57,11 @@ public:
     explicit HTMPFS_error_t(unsigned int _code = 0, std::string _info = "(no specified information)") noexcept
         : error_code(_code), _errno(errno), info(std::move(_info))
         {
-            std::cerr << "HTMPFS Error thrown" << std::endl;
-            _output_error_message();
+            if (!__disable_output)
+            {
+                std::cerr << "HTMPFS Error thrown" << std::endl;
+                _output_error_message();
+            }
         }
 
     /// Return explanation of current error

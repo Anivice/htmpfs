@@ -33,6 +33,7 @@ struct unique_buffer_pkg_id_t
 };
 
 class inode_smi_t;
+class directory_resolver_t;
 
 struct buffer_result_t
 {
@@ -40,6 +41,20 @@ struct buffer_result_t
     buffer_t * data;
     uint64_t _is_snapshoted:1;
 };
+
+struct inode_result_t
+{
+    inode_id_t id;
+    inode_t * inode;
+};
+
+/*
+ * Index node
+ *
+ * index node, or inode, offers managed, block-lized buffers.
+ * inode also offers managed snapshot volume creation/deletion
+ *
+ * */
 
 class inode_t
 {
@@ -53,7 +68,7 @@ private:
     /// only make sense for root inode
     std::map < snapshot_ver_t /* snapshot version */,
             std::vector < buffer_result_t > /* block map */
-    > block_map;
+    > buffer_map;
 
 public:
     /// public accessible dentry flag
@@ -108,6 +123,14 @@ public:
     /// current buffer bank size by version
     htmpfs_size_t current_data_size(snapshot_ver_t version);
 
+    /// create a new snapshot volume
+    /// @param volume_version volume version, provided by user
+    void create_new_volume(snapshot_ver_t volume_version);
+
+    /// delete a snapshot volume
+    /// @param volume_version volume version, provided by user
+    void delete_volume(snapshot_ver_t volume_version);
+
     friend class inode_smi_t;
 };
 
@@ -117,7 +140,7 @@ public:
  * Index-NODE System Management Interface, or inode_smi, is used for inode management.
  * inode_smi supports create/delete inodes, create/delete snapshot volumes.
  *
- * 1. CREATE/DELETE inode
+ * CREATE/DELETE inode
  *      inode_smi is initialized with a filesystem root, which is marked as dentry inode
  *      when creating inode, user must provide a valid parent inode number and a valid child
  *      name. this creation process only write a dentry in parent inode and allocate a free inode in
@@ -133,47 +156,6 @@ public:
  *
  *      NOTE that inode can be linked to multiple dentries, so inode will remain valid as long as
  *      link count > 0 (inode will be automatically removed when link_count == 0)
- *
- * 2. SNAPSHOT VOLUMES
- *      a). process of creating a snapshot volume
- *          say that we have a filesystem tree as following:
- *                                       /
- *                                       |
- *                  -----------------------------------------------
- *                  |                |               |            |
- *               etc/             usr/            bin/         lib/
- *                  |                |               |            |
- *                  |           ----------           |          libc.so
- *                  |           |        |           |            +
- *             ----------    bin/     lib/           |            +
- *             |        |       |        |           |            +
- *             |        |       |      libc.so ++++++++++++++++++++ (hard link)
- *             |        |       |                    |
- *             |        |       |                   bash
- *             |        |       |                    +
- *          X11/      ssh/     bash ++++++++++++++++++ (hard link)
- *             |         |
- *             |      ssh.conf
- *             |
- *       --------------
- *       |            |
- *  nvidia.conf   intel.conf
- *
- *          the filesystem layout would be:
- *          /
- *          /etc
- *          /etc/X11
- *          /etc/ssh
- *          /etc/X11/nvidia.conf
- *          /etc/X11/intel.conf
- *          /etc/ssh/ssh.conf
- *          /usr
- *          /usr/bin
- *          /usr/lib
- *          /usr/bin/bash
- *          /usr/lib/libc.so
- *          /bin/bash
- *          /lib/libc.so
  *
  * */
 
@@ -207,7 +189,7 @@ private:
     std::map < inode_id_t, inode_pack_t > inode_pool;
 
     /// snapshot version list
-    std::vector < snapshot_ver_t > snapshot_version_list;
+    std::map < snapshot_ver_t, std::vector < inode_result_t > > snapshot_version_list;
 
     /// get a free id
     template<class Typename>
@@ -217,15 +199,17 @@ private:
     /// request allocating buffer
     buffer_result_t request_buffer_allocation();
 
-    /// REQUEST FUNCTIONS: ONLY INVOKABLE BY inode_t
-    /// request deletion of buffer
-    void request_buffer_deletion(buffer_id_t);
-
     /// increase link of specific buffer
     void link_buffer(buffer_id_t buffer_id);
 
+    /// request deletion of buffer
+    void unlink_buffer(buffer_id_t buffer_id);
+
     /// increase link of specific inode
     void link_inode(inode_id_t inode_id);
+
+    /// decrease link of specific inode
+    void unlink_inode(inode_id_t inode_id);
 
     /// get buffer by buffer id
     /// @param buffer_id buffer id
@@ -254,6 +238,9 @@ public:
     void remove_child_dentry_under_parent(inode_id_t parent_inode_id,
                                           const std::string & name);
 
+    /// remove an inode by path, for debug purpose only
+    void remove_inode_by_path(const std::string & pathname);
+
     /// create a snapshot volume
     /// @return snapshot volume version
     snapshot_ver_t create_snapshot_volume();
@@ -266,7 +253,7 @@ public:
     /// @retuen filesystem layout
     std::vector < std::string > export_as_filesystem_map(snapshot_ver_t version);
 
-    friend inode_t;
+    friend class inode_t;
 };
 
 template<class Typename>

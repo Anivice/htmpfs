@@ -53,10 +53,37 @@ bool can_find(const std::vector < std::string > & list, const std::string & val)
     return false;
 }
 
+void show_vector(const std::vector <std::string> & vec)
+{
+    for (const auto & i : vec)
+    {
+        std::cout << i << std::endl;
+    }
+}
+
+bool compare_two_vec(const std::vector < std::string > & _vec_1,
+                     const std::vector < std::string > & _vec_2)
+{
+    if (_vec_1.size() != _vec_2.size())
+    {
+        return false;
+    }
+
+    for (const auto& i : _vec_2)
+    {
+        if (std::find(_vec_1.begin(), _vec_1.end(), i) == _vec_1.end())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main()
 {
     {
-        /// instance 1: filesystem snapshot, no block change
+        /// instance 1: filesystem snapshot, no content change
 
         // create a new filesystem
         inode_smi_t filesystem(27);
@@ -78,114 +105,66 @@ int main()
          * |---- linux.boot
          * */
 
+        auto snapshot_id = filesystem.create_snapshot_volume();
+
         filesystem.remove_child_dentry_under_parent(
                 FILESYSTEM_ROOT_INODE_NUMBER,
                 "linux.boot");
 
+        show_vector(filesystem.export_as_filesystem_map(0));
+        show_vector(filesystem.export_as_filesystem_map(snapshot_id));
     }
 
     {
-        /// instance 3: remove an inode, both successful and failed
+        /// instance 2: filesystem snapshot, delete snapshot volume
 
         // create a new filesystem
         inode_smi_t filesystem(27);
         inode_id_t etc_id =
                 filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
                                                           "etc", true);
-
         inode_id_t linux_boot =
                 filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
                                                           "linux.boot", false);
-
-        inode_id_t X11 =
-                filesystem.make_child_dentry_under_parent(etc_id, "X11", true);
-        inode_id_t x11_intel =
-                filesystem.make_child_dentry_under_parent(X11, "x11_intel.conf", false);
         inode_id_t Xorg_conf =
-                filesystem.make_child_dentry_under_parent(X11, "Xorg.conf", false);
+                filesystem.make_child_dentry_under_parent(etc_id, "Xorg.conf", false);
 
         /* current filesystem layout:
          * /
          * |
          * |---- etc/
-         * |        |------X11\
-         * |                  |
-         * |                  |------- x11_intel.conf
-         * |                  |------- Xorg.conf
+         * |        |------Xorg.conf
          * |
          * |---- linux.boot
          * */
 
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc", 0), etc_id);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/linux.boot", 0), linux_boot);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11", 0), X11);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11/x11_intel.conf", 0), x11_intel);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11/Xorg.conf", 0), Xorg_conf);
+        auto snapshot_id = filesystem.create_snapshot_volume();
 
-        filesystem.remove_child_dentry_under_parent(X11, "Xorg.conf");
+        filesystem.remove_child_dentry_under_parent(
+                FILESYSTEM_ROOT_INODE_NUMBER,
+                "linux.boot");
 
-        try {
-            filesystem.get_inode_id_by_path("/etc/X11/Xorg.conf", 0);
-        } catch (HTMPFS_error_t & err) {
-            VERIFY_DATA(err.my_errcode(), HTMPFS_NO_SUCH_FILE_OR_DIR);
-        }
+        show_vector(filesystem.export_as_filesystem_map(0));
+        show_vector(filesystem.export_as_filesystem_map(snapshot_id));
+
+        filesystem.delete_snapshot_volume(snapshot_id);
 
         try {
-            filesystem.remove_child_dentry_under_parent(X11, "nvidia.conf");
+            filesystem.get_inode_id_by_path("/etc", snapshot_id);
         } catch (HTMPFS_error_t & err) {
-            VERIFY_DATA(err.my_errcode(), HTMPFS_NO_SUCH_FILE_OR_DIR);
-        }
-
-        try {
-            filesystem.remove_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
-                                                        "etc");
-        } catch (HTMPFS_error_t & err) {
-            VERIFY_DATA(err.my_errcode(), HTMPFS_DIR_NOT_EMPTY);
+            if (err.my_errcode() != HTMPFS_NO_SUCH_SNAPSHOT)
+            {
+                return EXIT_FAILURE;
+            }
         }
     }
 
     {
-        /// instance 4: export filesystem map
+        /// mixed operation, verify file content and pathname
 
-        // create a new filesystem
-        inode_smi_t filesystem(27);
-        inode_id_t etc_id =
-                filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
-                                                          "etc", true);
 
-        inode_id_t boot =
-                filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
-                                                          "boot", true);
-
-        inode_id_t X11 =
-                filesystem.make_child_dentry_under_parent(etc_id, "X11", true);
-        inode_id_t x11_intel =
-                filesystem.make_child_dentry_under_parent(X11, "x11_intel.conf", false);
-        inode_id_t Xorg_conf =
-                filesystem.make_child_dentry_under_parent(X11, "Xorg.conf", false);
-
-        inode_id_t linux_kernel =
-                filesystem.make_child_dentry_under_parent(boot, "linux", false);
-
-        /* current filesystem layout:
-         * /
-         * |
-         * |---- etc/
-         * |        |------X11\
-         * |                  |
-         * |                  |------- x11_intel.conf
-         * |                  |------- Xorg.conf
-         * |
-         * |---- boot\
-         * |         |
-         * |         |-------- linux
-         * */
-
-        filesystem.export_as_filesystem_map(0);
-    }
-
-    {
-        /// mixed operation, random pathname + data
+        /// generate random filesystem tree
+        //////////////////////////////////////////////////////////////////////////////
 
         std::map < std::string /* pathname */, std::string /* file content */ > files;
         std::vector < std::string > pathname_dictionary;
@@ -213,7 +192,7 @@ int main()
         // ----------------------------------------------------------------------------------------- //
 
         const uint64_t filesystem_tree_size_seed = 8;
-        inode_smi_t filesystem(27);
+        inode_smi_t filesystem(4);
 
         for (uint64_t first_level_dir_count = 1;
              first_level_dir_count <= filesystem_tree_size_seed;
@@ -257,17 +236,24 @@ int main()
             files.emplace(subsequent_path_name, content);
         }
 
-        /// data verification
+        //////////////////////////////////////////////////////////////////////////////
+
+        // create a snapshot of current filesystem
+        filesystem.create_snapshot_volume();
+
+        show_vector(filesystem.export_as_filesystem_map(1));
+
+        /// verify snapshot tree
 
         // pathname verification, verify all existence of valid pathname
         // dictionary as base, verify filesystem
         for (const auto & i : pathname_dictionary)
         {
-            filesystem.get_inode_id_by_path(i, 0);
+            filesystem.get_inode_id_by_path(i, 1);
         }
 
         // filesystem as base, verify dictionary
-        auto vec = filesystem.export_as_filesystem_map(0);
+        auto vec = filesystem.export_as_filesystem_map(1);
         for (const auto & i : vec)
         {
             if (!can_find(pathname_dictionary, i))
@@ -276,11 +262,55 @@ int main()
             }
         }
 
+        /// randomly modify filesystem tree
+
+        // sort pathname by length, so the deepest inode will be deleted first
+        std::sort(pathname_dictionary.begin(), pathname_dictionary.end(), []
+                (const std::string& first, const std::string& second){
+            return first.size() > second.size();
+        });
+
+        uint64_t random_deletion_num = generate_random_num(filesystem_tree_size_seed,
+                                                           pathname_dictionary.size() / 2);
+        for (uint64_t i = 0; i < random_deletion_num; i++)
+        {
+            auto it = files.find(*pathname_dictionary.begin());
+            if (it != files.end()) {
+                files.erase(it);
+            }
+
+            filesystem.remove_inode_by_path(*pathname_dictionary.begin());
+            pathname_dictionary.erase(pathname_dictionary.begin());
+        }
+
+        // yea let me take a snapshot real quick
+        filesystem.create_snapshot_volume();
+
+        if (!compare_two_vec(
+                filesystem.export_as_filesystem_map(0),
+                filesystem.export_as_filesystem_map(2)))
+        {
+            return EXIT_FAILURE;
+        }
+
+        auto _vec = filesystem.export_as_filesystem_map(2);
+        std::sort(_vec.begin(), _vec.end(), []
+                (const std::string& first, const std::string& second){
+            return first.size() > second.size();
+        });
+
+        if (!compare_two_vec(_vec, pathname_dictionary))
+        {
+            return EXIT_FAILURE;
+        }
+
+        /// verify content in data
+
         // verify data
         for (const auto & i : files)
         {
-            inode_id_t inode = filesystem.get_inode_id_by_path(i.first, 0);
-            auto _data = filesystem.get_inode_by_id(inode)->to_string(0);
+            inode_id_t inode = filesystem.get_inode_id_by_path(i.first, 1);
+            auto _data = filesystem.get_inode_by_id(inode)->to_string(1);
             if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
             {
                 return EXIT_FAILURE;

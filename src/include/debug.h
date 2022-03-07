@@ -6,13 +6,16 @@
  * This file defines operations for runtime debug support
  */
 
-#ifdef CMAKE_BUILD_DEBUG
-
 #include <iostream>
 #include <execinfo.h>
 #include <sys/xattr.h>
 #include <sys/sysinfo.h>
 #include <string>
+
+// override debug flag
+//#undef CMAKE_BUILD_DEBUG
+
+#ifdef CMAKE_BUILD_DEBUG
 
 /// check if addr2line command is available, filled by __check_addr2line()
 extern bool __is_addr2line_available;
@@ -22,6 +25,9 @@ extern bool __is_time_enabled;
 
 /// check addr2line availability
 void __check_addr2line();
+
+/// temporarily disable debug output
+extern bool __disable_output;
 
 /// execute a command and get its output
 /// @param cmd command for SHELL
@@ -61,6 +67,7 @@ public:
 /// output_pipe == 1: stdout, output_pipe == 2, stderr
 /// other value will be ignored and pipe will be default to stdout
 # define OBTAIN_STACK_FRAME(fd)                                                         \
+if (!__disable_output)                                                                  \
 {                                                                                       \
     auto * output_pipe = &std::cout;                                                    \
     if ((fd) == 2)                                                                      \
@@ -108,6 +115,7 @@ public:
 /// output_pipe == 1: stdout, output_pipe == 2, stderr
 /// other value will be ignored and pipe will be default to stdout
 # define FUNCTION_INFO(fd)                              \
+if (!__disable_output)                                  \
 {                                                       \
     auto * output_pipe = &std::cout;                    \
     if ((fd) == 2)                                      \
@@ -124,8 +132,8 @@ public:
 
 #else // CMAKE_BUILD_DEBUG
 
-# define OBTAIN_STACK_FRAME __asm__("nop") /* suppress IDE "empty statement" warning */
-# define FUNCTION_INFO      __asm__("nop") /* suppress IDE "empty statement" warning */
+# define OBTAIN_STACK_FRAME(fd) __asm__("nop") /* suppress IDE "empty statement" warning */
+# define FUNCTION_INFO(fd)      __asm__("nop") /* suppress IDE "empty statement" warning */
 
 #endif // CMAKE_BUILD_DEBUG
 

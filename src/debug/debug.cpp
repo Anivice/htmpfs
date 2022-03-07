@@ -15,6 +15,7 @@
 
 bool __is_addr2line_available = false;
 bool __is_time_enabled = false;
+bool __disable_output = false;
 
 std::string __exec_cmd(const std::string& cmd)
 {
