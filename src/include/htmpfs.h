@@ -228,6 +228,8 @@ public:
     /// @retuen filesystem layout
     std::vector < std::string > export_as_filesystem_map(snapshot_ver_t version);
 
+    htmpfs_size_t count_link_for_inode(inode_id_t inode_id);
+
     friend class inode_t;
 };
 

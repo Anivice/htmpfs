@@ -33,6 +33,7 @@ int do_mkdir    (const char * path, mode_t mode);
 int do_unlink   (const char * path);
 int do_rmdir    (const char * path);
 int do_symlink  (const char * path, const char *);
+int do_link     (const char *, const char *);
 int do_rename   (const char * path, const char * name);
 int do_chmod    (const char * path, mode_t mode);
 int do_chown    (const char * path, uid_t uid, gid_t gid);
@@ -43,16 +44,17 @@ int do_write    (const char * path, const char * buffer, size_t size, off_t offs
 int do_flush    (const char * path, struct fuse_file_info * fi);
 int do_release  (const char * path, struct fuse_file_info * fi);
 int do_fsync    (const char * path, int, struct fuse_file_info *);
-int do_setxattr (const char * path, const char *, const char *, size_t, int);
-int do_getxattr (const char * path, const char *, char *, size_t);
-int do_listxattr (const char *path, char *, size_t);
-int do_removexattr (const char *path, const char *);
 int do_readdir  (const char * path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
 int do_releasedir (const char *path, struct fuse_file_info *);
 int do_fsyncdir (const char * path, int, struct fuse_file_info *);
 int do_create   (const char * path, mode_t mode, struct fuse_file_info * fi);
 int do_utimens  (const char * path, const struct timespec tv[2]);
-int do_ioctl    (const char * path, int cmd, void *arg, struct fuse_file_info *, unsigned int flags, void *data);
 int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct fuse_file_info * fi);
+int do_statfs   (const char *, struct statvfs *);
+int do_access   (const char *, int);
+int do_fgetattr (const char *, struct stat *, struct fuse_file_info *);
+int do_ftruncate (const char *, off_t, struct fuse_file_info *);
+void do_destroy (void *);
+void* do_init    (struct fuse_conn_info *conn);
 
 #endif //HTMPFS_FUSE_H

@@ -29,6 +29,8 @@ public:
             pathname.pop_back();
             return ret;
         }
+
+    std::string to_string();
 };
 
 #endif //HTMPFS_PATH_T_H

@@ -42,5 +42,14 @@ int main(int argc, char ** argv)
         VERIFY_DATA(path2.size(), 2);
     }
 
+    {
+        /// instance 4: pop path
+
+        INSTANCE("PATH_T: instance 4: pop path");
+        path_t path2("/etc/target");
+        path2.pop_end();
+        VERIFY_DATA(path2.to_string(), "/etc");
+    }
+
     return EXIT_SUCCESS;
 }

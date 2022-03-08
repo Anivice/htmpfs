@@ -684,6 +684,13 @@ snapshot_ver_t if_snapshot(const std::string & path, std::string & output)
     {
         // get snapshot version
         head++;
+
+        // if no version provided
+        if (head == before_parse_vec_path.end())
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+
         version = *head;
 
         // parse pathname
@@ -720,6 +727,19 @@ inode_id_t inode_smi_t::get_inode_id_by_path(const std::string & path)
     version = if_snapshot(path, parsed_path);
     path_t vec_path(parsed_path);
 
+    // if access /.snapshot/$(version)
+    if (version != FILESYSTEM_CUR_MODIFIABLE_VER && vec_path.size() == 1)
+    {
+        auto it = snapshot_version_list.find(version);
+        if (it == snapshot_version_list.end())
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
+        }
+
+        return FILESYSTEM_ROOT_INODE_NUMBER;
+    }
+
+    // access /.snapshot/$(version)/$(pathname)
     for (const auto & i : vec_path)
     {
         // ignore filesystem root
@@ -1072,5 +1092,16 @@ void inode_smi_t::remove_inode_by_path(const std::string &pathname)
 
     // remove child
     remove_child_dentry_under_parent(ops_inode->inode_id, target_name);
+}
+
+htmpfs_size_t inode_smi_t::count_link_for_inode(inode_id_t inode_id)
+{
+    auto it = inode_pool.find(inode_id);
+    if (it == inode_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
+    }
+
+    return it->second.link_count;
 }
 

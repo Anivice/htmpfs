@@ -21,20 +21,19 @@ const unsigned int code##_ERRNO_CODE = _errno;
 /// Define error information
 _ADD_ERROR_INFORMATION_(HTMPFS_SUCCESSFUL,              0x00000000,     "Successful",                   0)
 _ADD_ERROR_INFORMATION_(HTMPFS_EXT_LIB_ERR,             0xA0000001,     "External library error",       1)
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC,            0xA0000002,     "Double allocating in one node", 1)
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC,            0xA0000002,     "Double allocating in one node", EEXIST)
 _ADD_ERROR_INFORMATION_(HTMPFS_ILLEGAL_ACCESS,          0xA0000003,     "Illegal access of memory",     1)
 _ADD_ERROR_INFORMATION_(HTMPFS_SNAPSHOT_VER_DEPLETED,   0xA0000004,     "Snapshot version depleted",    1)
-_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_SNAPSHOT,        0xA0000005,     "Snapshot not found",           1)
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_SNAPSHOT,         0xA0000006,     "Double snapshot",              1)
+_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_SNAPSHOT,        0xA0000005,     "Snapshot not found",           ENOENT)
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_SNAPSHOT,         0xA0000006,     "Double snapshot",              EEXIST)
 _ADD_ERROR_INFORMATION_(HTMPFS_BLOCK_NOT_FOUND,         0xA0000007,     "Block not found",              1)
 _ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_ID_DEPLETED,      0xA0000008,     "Buffer ID depleted",           1)
 _ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_WRITE,      0xA0000009,     "Buffer short write",           1)
 _ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIRECTORY,         0xA000000A,     "Inode is not a directory",     ENOTDIR)
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_MKPATHNAME,       0xA000000B,     "Pathname already exists",      1)
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_MKPATHNAME,       0xA000000B,     "Pathname already exists",      EEXIST)
 _ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_FILE_OR_DIR,     0xA000000C,     "No such file or directory",    ENOENT)
 _ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_BUFFER_NOT_FOUND,  0xA000000D, "Requested buffer not found",   1)
 _ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_INODE_NOT_FOUND,   0xA000000E, "Requested inode not found",    1)
-_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_VERSION_NOT_FOUND, 0xA000000F, "Requested version not found",  1)
 _ADD_ERROR_INFORMATION_(HTMPFS_DIR_NOT_EMPTY,           0xA0000011,     "Directory inode not empty",    ENOTEMPTY)
 _ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_READ,       0xA0000012,     "Buffer short read",            1)
 _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_DENTRY_NAME,     0xA0000013,     "Invalid dentry name",          EINVAL)
@@ -47,20 +46,21 @@ class HTMPFS_error_t : public std::exception
 {
 private:
     uint32_t    error_code;
-    error_t     _errno;
+    error_t     _errno = 0;
     std::string info;
 
 public:
     /// fill out errno information based on error code
-    void fill_out_errno() const;
+    void fill_out_errno();
 
     /// Generate a error with error code
     /** @param _code Your error code
      *  @param _info expanded information for error
      **/
     explicit HTMPFS_error_t(unsigned int _code = 0, std::string _info = "(no specified information)") noexcept
-        : error_code(_code), _errno(errno), info(std::move(_info))
+        : info(std::move(_info))
         {
+            error_code = _code;
             if (!__disable_output)
             {
                 std::cerr << "HTMPFS Error thrown" << std::endl;
