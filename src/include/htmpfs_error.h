@@ -10,36 +10,37 @@
 #include <cstring>
 #include <cstdlib>
 #include <debug.h>
+#include <cerrno>
 
 /// _ADD_ERROR_INFORMATION_(error_code_name, error_code_value, error_code_text)
-#define _ADD_ERROR_INFORMATION_(code, val, info) \
-static const char * code##_ERR_TEXT = HTMPFS_PREFIX info; \
-const unsigned long int code = val;
-
+#define _ADD_ERROR_INFORMATION_(code, val, info, _errno)    \
+static const char * code##_ERR_TEXT = HTMPFS_PREFIX info;   \
+const unsigned long int code = val;                         \
+const unsigned int code##_ERRNO_CODE = _errno;
 
 /// Define error information
-_ADD_ERROR_INFORMATION_(HTMPFS_SUCCESSFUL,              0x00000000,     "Successful")
-_ADD_ERROR_INFORMATION_(HTMPFS_EXT_LIB_ERR,             0xA0000001,     "External library error")
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC,            0xA0000002,     "Double allocating in one node")
-_ADD_ERROR_INFORMATION_(HTMPFS_ILLEGAL_ACCESS,          0xA0000003,     "Illegal access of memory")
-_ADD_ERROR_INFORMATION_(HTMPFS_SNAPSHOT_VER_DEPLETED,   0xA0000004,     "Snapshot version depleted")
-_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_SNAPSHOT,        0xA0000005,     "Snapshot not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_SNAPSHOT,         0xA0000006,     "Double snapshot")
-_ADD_ERROR_INFORMATION_(HTMPFS_BLOCK_NOT_FOUND,         0xA0000007,     "Block not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_ID_DEPLETED,      0xA0000008,     "Buffer ID depleted")
-_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_WRITE,      0xA0000009,     "Buffer short write")
-_ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIRECTORY,         0xA000000A,     "Inode is not a directory")
-_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_MKPATHNAME,       0xA000000B,     "Pathname already exists")
-_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_FILE_OR_DIR,     0xA000000C,     "No such file or directory")
-_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_BUFFER_NOT_FOUND,  0xA000000D, "Requested buffer not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_INODE_NOT_FOUND,   0xA000000E, "Requested inode not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_VERSION_NOT_FOUND, 0xA000000F, "Requested version not found")
-_ADD_ERROR_INFORMATION_(HTMPFS_DIR_NOT_EMPTY,           0xA0000011,     "Directory inode not empty")
-_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_READ,       0xA0000012,     "Buffer short read")
-_ADD_ERROR_INFORMATION_(HTMPFS_INVALID_DENTRY_NAME,     0xA0000013,     "Invalid dentry name")
-_ADD_ERROR_INFORMATION_(HTMPFS_INVALID_WRITE_INVOKE,    0xA0000014,     "Invalid write invoke")
-_ADD_ERROR_INFORMATION_(HTMPFS_INVALID_READ_INVOKE,     0xA0000015,     "Invalid read invoke")
-_ADD_ERROR_INFORMATION_(HTMPFS_CANNOT_REMOVE_ROOT,      0xA0000016,     "Cannot remove root inode")
+_ADD_ERROR_INFORMATION_(HTMPFS_SUCCESSFUL,              0x00000000,     "Successful",                   0)
+_ADD_ERROR_INFORMATION_(HTMPFS_EXT_LIB_ERR,             0xA0000001,     "External library error",       1)
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_ALLOC,            0xA0000002,     "Double allocating in one node", 1)
+_ADD_ERROR_INFORMATION_(HTMPFS_ILLEGAL_ACCESS,          0xA0000003,     "Illegal access of memory",     1)
+_ADD_ERROR_INFORMATION_(HTMPFS_SNAPSHOT_VER_DEPLETED,   0xA0000004,     "Snapshot version depleted",    1)
+_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_SNAPSHOT,        0xA0000005,     "Snapshot not found",           1)
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_SNAPSHOT,         0xA0000006,     "Double snapshot",              1)
+_ADD_ERROR_INFORMATION_(HTMPFS_BLOCK_NOT_FOUND,         0xA0000007,     "Block not found",              1)
+_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_ID_DEPLETED,      0xA0000008,     "Buffer ID depleted",           1)
+_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_WRITE,      0xA0000009,     "Buffer short write",           1)
+_ADD_ERROR_INFORMATION_(HTMPFS_NOT_A_DIRECTORY,         0xA000000A,     "Inode is not a directory",     ENOTDIR)
+_ADD_ERROR_INFORMATION_(HTMPFS_DOUBLE_MKPATHNAME,       0xA000000B,     "Pathname already exists",      1)
+_ADD_ERROR_INFORMATION_(HTMPFS_NO_SUCH_FILE_OR_DIR,     0xA000000C,     "No such file or directory",    ENOENT)
+_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_BUFFER_NOT_FOUND,  0xA000000D, "Requested buffer not found",   1)
+_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_INODE_NOT_FOUND,   0xA000000E, "Requested inode not found",    1)
+_ADD_ERROR_INFORMATION_(HTMPFS_REQUESTED_VERSION_NOT_FOUND, 0xA000000F, "Requested version not found",  1)
+_ADD_ERROR_INFORMATION_(HTMPFS_DIR_NOT_EMPTY,           0xA0000011,     "Directory inode not empty",    ENOTEMPTY)
+_ADD_ERROR_INFORMATION_(HTMPFS_BUFFER_SHORT_READ,       0xA0000012,     "Buffer short read",            1)
+_ADD_ERROR_INFORMATION_(HTMPFS_INVALID_DENTRY_NAME,     0xA0000013,     "Invalid dentry name",          EINVAL)
+_ADD_ERROR_INFORMATION_(HTMPFS_INVALID_WRITE_INVOKE,    0xA0000014,     "Invalid write invoke",         1)
+_ADD_ERROR_INFORMATION_(HTMPFS_INVALID_READ_INVOKE,     0xA0000015,     "Invalid read invoke",          1)
+_ADD_ERROR_INFORMATION_(HTMPFS_CANNOT_REMOVE_ROOT,      0xA0000016,     "Cannot remove root inode",     EISDIR)
 
 /// Filesystem Error Type
 class HTMPFS_error_t : public std::exception
@@ -50,6 +51,9 @@ private:
     std::string info;
 
 public:
+    /// fill out errno information based on error code
+    void fill_out_errno();
+
     /// Generate a error with error code
     /** @param _code Your error code
      *  @param _info expanded information for error
@@ -62,6 +66,8 @@ public:
                 std::cerr << "HTMPFS Error thrown" << std::endl;
                 _output_error_message();
             }
+
+            fill_out_errno();
         }
 
     /// Return explanation of current error

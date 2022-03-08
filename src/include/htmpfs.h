@@ -14,39 +14,7 @@
 #include <string>
 #include <path_t.h>
 #include <directory_resolver.h>
-
-#define LEFT_SHIFT64(val, bit_count)  ((uint64_t)((uint64_t)(val) << (uint64_t)bit_count))
-#define RIGHT_SHIFT64(val, bit_count) ((uint64_t)((uint64_t)(val) >> (uint64_t)bit_count))
-
-#define FILESYSTEM_ROOT_INODE_NUMBER    0x00
-#define FILESYSTEM_CUR_MODIFIABLE_VER   0x00
-
-typedef uint64_t snapshot_ver_t;
-typedef uint64_t buffer_id_t;
-typedef uint64_t inode_id_t;
-struct unique_buffer_pkg_id_t
-{
-    snapshot_ver_t version;
-    buffer_id_t    buffer_id;
-    inode_id_t     inode_id;
-    uint64_t       pkg_link_count;
-};
-
-class inode_smi_t;
-class directory_resolver_t;
-
-struct buffer_result_t
-{
-    buffer_id_t id;
-    buffer_t * data;
-    uint64_t _is_snapshoted:1;
-};
-
-struct inode_result_t
-{
-    inode_id_t id;
-    inode_t * inode;
-};
+#include <htmpfs_types.h>
 
 /*
  * Index node
@@ -104,6 +72,7 @@ public:
                         htmpfs_size_t length,
                         htmpfs_size_t offset,
                         bool resize = true,
+                        bool bare_allocate = false,
                         directory_resolver_t::__dentry_only dentry_only =
                                 directory_resolver_t::__dentry_only(false));
 
@@ -130,6 +99,8 @@ public:
     /// delete a snapshot volume
     /// @param volume_version volume version, provided by user
     void delete_volume(snapshot_ver_t volume_version);
+
+    htmpfs_size_t block_count(snapshot_ver_t version);
 
     friend class inode_smi_t;
 };
@@ -220,7 +191,7 @@ public:
     explicit inode_smi_t(htmpfs_size_t _block_size);
 
     /// get inode pointer by path
-    inode_id_t get_inode_id_by_path(const std::string&, snapshot_ver_t);
+    inode_id_t get_inode_id_by_path(const std::string&);
 
     /// get inode pointer by id
     inode_t * get_inode_by_id(inode_id_t inode_id);

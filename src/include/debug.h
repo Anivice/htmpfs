@@ -105,7 +105,7 @@ if (!__disable_output)                                                          
             *output_pipe << "\n";                                                       \
         }                                                                               \
         free (__strings);                                                               \
-        *output_pipe << std::endl;                                                      \
+        *output_pipe << std::endl << std::endl;                                         \
     }                                                                                   \
 } __asm__("nop") /* suppress IDE "empty statement" warning */
 
@@ -129,11 +129,14 @@ if (!__disable_output)                                  \
               << __FUNCTION__ << ": ";                  \
 } __asm__("nop") /* suppress IDE "empty statement" warning */
 
+#define INSTANCE(MESSAGE) \
+    std::cout << "\033[01;33m" << (MESSAGE) << "\033[0m" << std::endl
 
 #else // CMAKE_BUILD_DEBUG
 
 # define OBTAIN_STACK_FRAME(fd) __asm__("nop") /* suppress IDE "empty statement" warning */
 # define FUNCTION_INFO(fd)      __asm__("nop") /* suppress IDE "empty statement" warning */
+#define INSTANCE(MESSAGE)       __asm__("nop") /* suppress IDE "empty statement" warning */
 
 #endif // CMAKE_BUILD_DEBUG
 

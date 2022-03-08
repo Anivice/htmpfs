@@ -19,6 +19,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 1: bare write, resize enabled, no offset, no snapshot
+
+        INSTANCE("INODE: instance 1: bare write, resize enabled, no offset, no snapshot");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA(inode, "123456789");
@@ -26,6 +28,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 2: bare write, resize enabled, no offset, check snapshot
+
+        INSTANCE("INODE: instance 2: bare write, resize enabled, no offset, check snapshot");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -34,6 +38,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 3: bare write, resize enabled, no offset, enable snapshot, modify root
+
+        INSTANCE("INODE: instance 3: bare write, resize enabled, no offset, enable snapshot, modify root");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -45,6 +51,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 4: bare write, resize enabled, with offset, enable snapshot multiple times, modify root
+
+        INSTANCE("INODE: instance 4: bare write, resize enabled, with offset, enable snapshot multiple times, modify root");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -59,6 +67,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 5: bare write, resize enabled, with offset, snapshot causes grow size
+
+        INSTANCE("INODE: instance 5: bare write, resize enabled, with offset, snapshot causes grow size");
         inode_t inode(2, 0, &filesystem);
 
         inode.write("1", 1, 0);
@@ -72,6 +82,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 6: bare write, shortage, resize enabled, with offset
+
+        INSTANCE("INODE: instance 6: bare write, shortage, resize enabled, with offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -84,6 +96,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 7: bare write, shortage, resize enabled, with offset, middle modify
+
+        INSTANCE("INODE: instance 7: bare write, shortage, resize enabled, with offset, middle modify");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -95,6 +109,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 8: bare write, shortage, resize disabled, without offset
+
+        INSTANCE("INODE: instance 8: bare write, shortage, resize disabled, without offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -105,6 +121,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 9: bare write, extended, resize disabled, without offset
+
+        INSTANCE("INODE: instance 9: bare write, extended, resize disabled, without offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         inode.create_new_volume(1);
@@ -114,6 +132,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 10: bare read, bank size shortage, with offset
+
+        INSTANCE("INODE: instance 10: bare read, bank size shortage, with offset");
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
@@ -124,6 +144,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 11: bare read, bank size shortage, with offset
+
+        INSTANCE("INODE: instance 11: bare read, bank size shortage, with offset");
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
@@ -142,6 +164,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 12: bare write, resize enabled, no offset, delete snapshot volume
+
+        INSTANCE("INODE: instance 12: bare write, resize enabled, no offset, delete snapshot volume");
         inode_t inode(2, 0, &filesystem);
 
         inode.write("123456789", 9, 0);

@@ -1,6 +1,7 @@
 #include <path_t.h>
 #include <string>
 #include <iostream>
+#include <debug.h>
 
 /** @file
  *
@@ -14,6 +15,7 @@ int main(int argc, char ** argv)
     {
         /// instance 1: path match
 
+        INSTANCE("PATH_T: instance 1: path match");
         path_t path("/usr/bin/bash");
         std::vector < std::string > list ({"", "usr", "bin", "bash"});
 
@@ -27,13 +29,15 @@ int main(int argc, char ** argv)
     {
         /// instance 2: empty match
 
+        INSTANCE("PATH_T: instance 2: empty match");
         path_t path2("/");
         VERIFY_DATA(path2.size(), 1);
     }
 
     {
-        /// instance 2: path ends with '/'
+        /// instance 3: path ends with '/'
 
+        INSTANCE("PATH_T: instance 3: path ends with '/'");
         path_t path2("/etc/");
         VERIFY_DATA(path2.size(), 2);
     }

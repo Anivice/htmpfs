@@ -16,6 +16,10 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     enable_testing()
 endif()
 
+include(FindPkgConfig)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBFUSE REQUIRED fuse)
+
 add_compile_definitions("_FILE_OFFSET_BITS=64")
 add_compile_definitions("PACKAGE_NAME=\"${PROJECT_NAME}\"")
 add_compile_definitions("PACKAGE_VERSION=\"${PROJECT_VERSION}\"")
@@ -43,7 +47,7 @@ add_library(${PROJECT_NAME}
         src/buffer_t.cpp src/include/buffer_t.h
 
         # pathname resolver
-        src/path_t.cpp src/include/path_t.h src/include/custom_itr.h
+        src/path_t.cpp src/include/path_t.h
 
         # Debug:
         src/debug/debug.cpp src/include/debug.h src/debug/error.cpp
@@ -54,6 +58,16 @@ add_library(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC src/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${EXTERNAL_LIBRARIES})
 
+add_executable(mount.htmpfs
+        src/utils/mount.htmpfs.cpp
+        src/utils/fuse.cpp
+        src/include/fuse_ops.h)
+target_include_directories(mount.htmpfs PUBLIC src/include)
+target_link_libraries(mount.htmpfs PUBLIC ${EXTERNAL_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(mount.htmpfs PUBLIC ${LIBFUSE_LIBRARIES})
+target_include_directories(mount.htmpfs PUBLIC ${LIBFUSE_INCLUDE_DIRS})
+target_compile_options(mount.htmpfs PUBLIC ${LIBFUSE_CFLAGS_OTHER})
+
 function(add_single_file EXEC_NAME PATH_PREFIX)
     add_executable(${EXEC_NAME} ${PATH_PREFIX}/${EXEC_NAME}.cpp)
     target_include_directories(${EXEC_NAME} PUBLIC src/include)
@@ -62,12 +76,11 @@ function(add_single_file EXEC_NAME PATH_PREFIX)
     message("Single exec `${EXEC_NAME}` enabled")
 endfunction()
 
-    # Unit tests
+# Unit tests
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     _add_test(error             "Error test")
     _add_test(debug             "Debug test")
     _add_test(buffer_t          "buffer_t test")
-    _add_test(custom_iterator   "Test for custom iterator")
     _add_test(path              "Test for pathname resolver")
     _add_test(sig_inode         "Test for single inode")
     _add_test(dir_resolver      "Test for Directory Resolver")

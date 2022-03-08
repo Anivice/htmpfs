@@ -21,6 +21,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
                              htmpfs_size_t length,
                              htmpfs_size_t offset,
                              bool resize,
+                             bool bare_allocate,
                              directory_resolver_t::__dentry_only dentry_only)
 {
     /**                     SANITY CHECK                    **/
@@ -39,6 +40,12 @@ htmpfs_size_t inode_t::write(const char *buffer,
     }
 
     /**                     SANITY CHECK END                    **/
+
+    // bare allocating buffer, force resize
+    if (bare_allocate)
+    {
+        resize = true;
+    }
 
     auto &snapshot_0_block_list = buffer_map.at(0);
 
@@ -201,34 +208,70 @@ htmpfs_size_t inode_t::write(const char *buffer,
 
         // =================================================================== //
 
-        // write starting block
-        VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer).data->write(
-                            buffer,
-                            write_length_in_starting_buffer,
-                            offset_for_starting_buffer,
-                            true
-        ), write_length_in_starting_buffer);
-
-        // full block operation
-        for (buffer_id_t i = 1; i <= full_block_operation_count; i++)
+        if (bare_allocate)
         {
-            VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer + i).data->write(
-                    buffer + write_length_in_starting_buffer + (i - 1) * block_size,
-                    block_size,
-                    0, true
-            ), block_size);
+            char * empty_buffer = new char [block_size];
+            memset(empty_buffer, 0, block_size);
+
+            // write starting block
+            VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer).data->write(
+                    empty_buffer,
+                    write_length_in_starting_buffer,
+                    offset_for_starting_buffer,
+                    true
+            ), write_length_in_starting_buffer);
+
+            // full block operation
+            for (buffer_id_t i = 1; i <= full_block_operation_count; i++) {
+                VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer + i).data->write(
+                        empty_buffer,
+                        block_size,
+                        0, true
+                ), block_size);
+            }
+
+            // last block operation
+            if (write_length_in_last_buffer) {
+                VERIFY_DATA_OPS_LEN
+                (
+                        snapshot_0_block_list.at(starting_buffer + full_block_operation_count + 1).data->write(
+                                empty_buffer,
+                                write_length_in_last_buffer,
+                                0, true
+                        ), write_length_in_last_buffer);
+            }
+
+            delete [] empty_buffer;
         }
-
-        // last block operation
-        if (write_length_in_last_buffer)
+        else
         {
-            VERIFY_DATA_OPS_LEN
-            (
-                    snapshot_0_block_list.at(starting_buffer + full_block_operation_count + 1).data->write(
-                            buffer + write_length_in_starting_buffer + full_block_operation_count * block_size,
-                            write_length_in_last_buffer,
-                            0, true
-                    ), write_length_in_last_buffer);
+            // write starting block
+            VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer).data->write(
+                    buffer,
+                    write_length_in_starting_buffer,
+                    offset_for_starting_buffer,
+                    true
+            ), write_length_in_starting_buffer);
+
+            // full block operation
+            for (buffer_id_t i = 1; i <= full_block_operation_count; i++) {
+                VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer + i).data->write(
+                        buffer + write_length_in_starting_buffer + (i - 1) * block_size,
+                        block_size,
+                        0, true
+                ), block_size);
+            }
+
+            // last block operation
+            if (write_length_in_last_buffer) {
+                VERIFY_DATA_OPS_LEN
+                (
+                        snapshot_0_block_list.at(starting_buffer + full_block_operation_count + 1).data->write(
+                                buffer + write_length_in_starting_buffer + full_block_operation_count * block_size,
+                                write_length_in_last_buffer,
+                                0, true
+                        ), write_length_in_last_buffer);
+            }
         }
 
         return length;
@@ -304,8 +347,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
             >= write_size) // all write operation is in starting buffer
         {
             write_length_in_starting_buffer = write_size;
-        }
-        else // write length is beyond starting buffer
+        } else // write length is beyond starting buffer
         {
             write_length_in_starting_buffer = block_size - offset_for_starting_buffer;
         }
@@ -319,33 +361,66 @@ htmpfs_size_t inode_t::write(const char *buffer,
 
         // =================================================================== //
 
-        // write starting block
-        VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer).data->write(
-                buffer,
-                write_length_in_starting_buffer,
-                offset_for_starting_buffer
-        ), write_length_in_starting_buffer);
-
-        // full block operation
-        for (buffer_id_t i = 1; i <= full_block_operation_count; i++)
+        if (bare_allocate)
         {
-            VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer + i).data->write(
-                    buffer + write_length_in_starting_buffer + (i - 1) * block_size,
-                    block_size,
-                    0
-            ), block_size);
+            char * empty_buffer = new char [block_size];
+            memset(empty_buffer, 0, block_size);
+
+            // write starting block
+            VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer).data->write(
+                    empty_buffer,
+                    write_length_in_starting_buffer,
+                    offset_for_starting_buffer
+            ), write_length_in_starting_buffer);
+
+            // full block operation
+            for (buffer_id_t i = 1; i <= full_block_operation_count; i++) {
+                VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer + i).data->write(
+                        empty_buffer,
+                        block_size,
+                        0
+                ), block_size);
+            }
+
+            // last block operation
+            if (write_length_in_last_buffer) {
+                VERIFY_DATA_OPS_LEN
+                (
+                        snapshot_0_block_list.at(starting_buffer + full_block_operation_count + 1).data->write(
+                                empty_buffer,
+                                write_length_in_last_buffer,
+                                0
+                        ), write_length_in_last_buffer);
+            }
         }
-
-        // last block operation
-        if (write_length_in_last_buffer)
+        else
         {
-            VERIFY_DATA_OPS_LEN
-            (
-                    snapshot_0_block_list.at(starting_buffer + full_block_operation_count + 1).data->write(
-                            buffer + write_length_in_starting_buffer + full_block_operation_count * block_size,
-                            write_length_in_last_buffer,
-                            0
-                    ), write_length_in_last_buffer);
+            // write starting block
+            VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer).data->write(
+                    buffer,
+                    write_length_in_starting_buffer,
+                    offset_for_starting_buffer
+            ), write_length_in_starting_buffer);
+
+            // full block operation
+            for (buffer_id_t i = 1; i <= full_block_operation_count; i++) {
+                VERIFY_DATA_OPS_LEN(snapshot_0_block_list.at(starting_buffer + i).data->write(
+                        buffer + write_length_in_starting_buffer + (i - 1) * block_size,
+                        block_size,
+                        0
+                ), block_size);
+            }
+
+            // last block operation
+            if (write_length_in_last_buffer) {
+                VERIFY_DATA_OPS_LEN
+                (
+                        snapshot_0_block_list.at(starting_buffer + full_block_operation_count + 1).data->write(
+                                buffer + write_length_in_starting_buffer + full_block_operation_count * block_size,
+                                write_length_in_last_buffer,
+                                0
+                        ), write_length_in_last_buffer);
+            }
         }
 
         return write_size;
@@ -539,6 +614,16 @@ void inode_t::delete_volume(snapshot_ver_t volume_version)
     buffer_map.erase(volume_version);
 }
 
+htmpfs_size_t inode_t::block_count(snapshot_ver_t version)
+{
+    if (buffer_map.find(version) == buffer_map.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
+    }
+
+    return buffer_map.at(version).size();
+}
+
 buffer_result_t inode_smi_t::request_buffer_allocation()
 {
     auto id = get_free_id(buffer_pool);
@@ -573,10 +658,59 @@ void inode_smi_t::unlink_buffer(buffer_id_t buffer_id)
     }
 }
 
-inode_id_t inode_smi_t::get_inode_id_by_path(const std::string & path, snapshot_ver_t version)
+// check is given path starts with /.snapshot/$(version)/
+snapshot_ver_t if_snapshot(const std::string & path, std::string & output)
 {
-    path_t vec_path(path);
+    // ignore root
+    if (path == "/")
+    {
+        output = path;
+        return 0;
+    }
+
+    path_t before_parse_vec_path(path);
+    auto head = before_parse_vec_path.begin();
+    head++;
+    if (head == before_parse_vec_path.end())
+    {
+        return 0;
+    }
+
+    snapshot_ver_t version = 0;
+    if (*head == ".snapshot")
+    {
+        // get snapshot version
+        head++;
+        version = std::strtol((*head).c_str(), nullptr, 10);
+
+        // parse pathname
+        head++;
+        for (auto it = head; it != before_parse_vec_path.end(); it++)
+        {
+            output += "/" + *it;
+        }
+    }
+    else
+    {
+        output = path;
+        return 0;
+    }
+
+    return version;
+}
+
+inode_id_t inode_smi_t::get_inode_id_by_path(const std::string & path)
+{
+    if (path.empty() || path[0] != '/')
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+    }
+
     inode_id_t current_inode = 0;
+    snapshot_ver_t version;
+    std::string parsed_path;
+    version = if_snapshot(path, parsed_path);
+    path_t vec_path(parsed_path);
 
     for (const auto & i : vec_path)
     {
@@ -602,7 +736,7 @@ inode_smi_t::inode_smi_t(htmpfs_size_t _block_size)
                 .link_count = 1,
                 .inode = inode_t(
                         _block_size,
-                        0,
+                        FILESYSTEM_ROOT_INODE_NUMBER,
                         this,
                         true)
             }
@@ -614,7 +748,7 @@ inode_smi_t::inode_smi_t(htmpfs_size_t _block_size)
                                           ({
                                               inode_result_t
                                               {
-                                                  .id = 0,
+                                                  .id = FILESYSTEM_ROOT_INODE_NUMBER,
                                                   .inode = filesystem_root
                                               }
                                           })
@@ -817,8 +951,9 @@ std::vector < std::string > inode_smi_t::export_as_filesystem_map(snapshot_ver_t
         // get parent inode
         auto * parent_inode =
                 get_inode_by_id(
-                        get_inode_id_by_path((pathname_prefix),
-                                                    version)
+                        get_inode_id_by_path(
+                                make_path_with_version(pathname_prefix, version)
+                                )
                 );
 
         // check if parent inode is a dentry inode

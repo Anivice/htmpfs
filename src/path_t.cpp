@@ -2,9 +2,10 @@
 
 path_t::path_t(const std::string & given_path)
 {
+    pathname.emplace_back("");
+
     std::string cur;
     std::string path_to_file = given_path;
-    path_to_file.erase(path_to_file.begin());
 
     for (auto & i : path_to_file)
     {
@@ -15,7 +16,7 @@ path_t::path_t(const std::string & given_path)
                 continue;
             }
 
-            pathname.append(cur);
+            pathname.emplace_back(cur);
             cur.clear();
             continue;
         }
@@ -25,6 +26,6 @@ path_t::path_t(const std::string & given_path)
 
     if (!cur.empty())
     {
-        pathname.append(cur);
+        pathname.emplace_back(cur);
     }
 }

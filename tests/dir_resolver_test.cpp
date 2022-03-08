@@ -23,6 +23,7 @@ int main(int argc, char ** argv)
     {
         /// instance 1: add entries in directory resolver, confined in cache
 
+        INSTANCE("DIR RESOLV: instance 1: add entries in directory resolver, confined in cache");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
         directory_resolver_t directory_resolver(&inode, 0);
@@ -44,6 +45,7 @@ int main(int argc, char ** argv)
     {
         /// instance 2: add entries in directory resolver save to inode
 
+        INSTANCE("DIR RESOLV: instance 2: add entries in directory resolver save to inode");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
         directory_resolver_t directory_resolver(&inode, 0);
@@ -69,6 +71,7 @@ int main(int argc, char ** argv)
     {
         /// instance 3: inode is not a dentry inode
 
+        INSTANCE("DIR RESOLV: instance 3: inode is not a dentry inode");
         try
         {
             inode_smi_t filesystem(2);
@@ -87,6 +90,7 @@ int main(int argc, char ** argv)
     {
         /// instance 4: export vector
 
+        INSTANCE("DIR RESOLV: instance 4: export vector");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
         directory_resolver_t directory_resolver(&inode, 0);
@@ -110,6 +114,7 @@ int main(int argc, char ** argv)
     {
         /// instance 5: dentry duplicated
 
+        INSTANCE("DIR RESOLV: instance 5: dentry duplicated");
         try
         {
             inode_smi_t filesystem(2);
@@ -130,6 +135,7 @@ int main(int argc, char ** argv)
     {
         /// instance 6: makep dentry, both successful and failed
 
+        INSTANCE("DIR RESOLV: instance 6: makep dentry, both successful and failed");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
         directory_resolver_t directory_resolver(&inode, 0);
@@ -153,6 +159,7 @@ int main(int argc, char ** argv)
     {
         /// instance 7: path remove, inter-actively, both successful and failed
 
+        INSTANCE("DIR RESOLV: instance 7: path remove, inter-actively, both successful and failed");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
         directory_resolver_t directory_resolver(&inode, 0);
@@ -205,6 +212,7 @@ int main(int argc, char ** argv)
     {
         /// instance 8: check availability, both successful and failed
 
+        INSTANCE("DIR RESOLV: instance 8: check availability, both successful and failed");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
         directory_resolver_t directory_resolver(&inode, 0);

@@ -61,6 +61,7 @@ int main()
     {
         /// instance 1: filesystem bare I/O capability
 
+        INSTANCE("FILESYSTEM: instance 1: filesystem bare I/O capability");
         // create a new filesystem
         inode_smi_t filesystem(27);
 
@@ -70,14 +71,18 @@ int main()
         filesystem.get_inode_by_id(FILESYSTEM_ROOT_INODE_NUMBER)
                   ->write(data.c_str(), data.length(), 0);
 
-        VERIFY_DATA(filesystem.get_inode_by_id(FILESYSTEM_ROOT_INODE_NUMBER)
-                              ->to_string(0),
-                    data);
+        if(!!memcmp(filesystem.get_inode_by_id(FILESYSTEM_ROOT_INODE_NUMBER)
+                              ->to_string(0).c_str(),
+                    data.c_str(), 5391))
+        {
+            return EXIT_FAILURE;
+        }
     }
 #endif // CMAKE_BUILD_DEBUG
     {
         /// instance 2: create a sub directory, write data, both successful and failed
 
+        INSTANCE("FILESYSTEM: instance 2: create a sub directory, write data, both successful and failed");
         // create a new filesystem
         inode_smi_t filesystem(27);
         inode_id_t etc_id =
@@ -117,6 +122,7 @@ int main()
     {
         /// instance 3: remove an inode, both successful and failed
 
+        INSTANCE("FILESYSTEM: instance 3: remove an inode, both successful and failed");
         // create a new filesystem
         inode_smi_t filesystem(27);
         inode_id_t etc_id =
@@ -146,16 +152,16 @@ int main()
          * |---- linux.boot
          * */
 
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc", 0), etc_id);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/linux.boot", 0), linux_boot);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11", 0), X11);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11/x11_intel.conf", 0), x11_intel);
-        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11/Xorg.conf", 0), Xorg_conf);
+        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc"), etc_id);
+        VERIFY_DATA(filesystem.get_inode_id_by_path("/linux.boot"), linux_boot);
+        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11"), X11);
+        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11/x11_intel.conf"), x11_intel);
+        VERIFY_DATA(filesystem.get_inode_id_by_path("/etc/X11/Xorg.conf"), Xorg_conf);
 
         filesystem.remove_child_dentry_under_parent(X11, "Xorg.conf");
 
         try {
-            filesystem.get_inode_id_by_path("/etc/X11/Xorg.conf", 0);
+            filesystem.get_inode_id_by_path("/etc/X11/Xorg.conf");
         } catch (HTMPFS_error_t & err) {
             VERIFY_DATA(err.my_errcode(), HTMPFS_NO_SUCH_FILE_OR_DIR);
         }
@@ -177,6 +183,7 @@ int main()
     {
         /// instance 4: export filesystem map
 
+        INSTANCE("FILESYSTEM: instance 4: export filesystem map");
         // create a new filesystem
         inode_smi_t filesystem(27);
         inode_id_t etc_id =
@@ -219,6 +226,7 @@ int main()
     {
         /// mixed operation, random pathname + data
 
+        INSTANCE("FILESYSTEM: mixed operation, random pathname + data");
         std::map < std::string /* pathname */, std::string /* file content */ > files;
         std::vector < std::string > pathname_dictionary;
 
@@ -270,7 +278,7 @@ int main()
 //                std::cout << "MKTAG\t" << subsequent_path_name << "/" << target_name << std::endl;
                 pathname_dictionary.emplace_back(subsequent_path_name + "/" + target_name);
 
-                auto parent = filesystem.get_inode_id_by_path(subsequent_path_name, 0);
+                auto parent = filesystem.get_inode_id_by_path(subsequent_path_name);
                 filesystem.make_child_dentry_under_parent(parent, target_name, true);
 
                 // increase depth
@@ -280,7 +288,7 @@ int main()
             // write content
             std::string content = gen_random_data(generate_random_num(4096, 5133));
             auto * inode = filesystem.get_inode_by_id(
-                    filesystem.get_inode_id_by_path(subsequent_path_name, 0)
+                    filesystem.get_inode_id_by_path(subsequent_path_name)
                     );
             inode->__override_dentry_flag(false);
             inode->write(content.c_str(), content.length(), 0);
@@ -295,7 +303,7 @@ int main()
         // dictionary as base, verify filesystem
         for (const auto & i : pathname_dictionary)
         {
-            filesystem.get_inode_id_by_path(i, 0);
+            filesystem.get_inode_id_by_path(i);
         }
 
         // filesystem as base, verify dictionary
@@ -311,7 +319,7 @@ int main()
         // verify data
         for (const auto & i : files)
         {
-            inode_id_t inode = filesystem.get_inode_id_by_path(i.first, 0);
+            inode_id_t inode = filesystem.get_inode_id_by_path(i.first);
             auto _data = filesystem.get_inode_by_id(inode)->to_string(0);
             if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
             {

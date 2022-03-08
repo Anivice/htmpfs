@@ -1,6 +1,5 @@
 #include <buffer_t.h>
 #include <functional>
-#include <htmpfs_error.h>
 
 buffer_t::buffer_t(const char * new_data, htmpfs_size_t length)
 {

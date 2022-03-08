@@ -85,6 +85,7 @@ int main()
     {
         /// instance 1: filesystem snapshot, no content change
 
+        INSTANCE("FILESYSTEM: instance 1: filesystem snapshot, no content change");
         // create a new filesystem
         inode_smi_t filesystem(27);
         inode_id_t etc_id =
@@ -150,7 +151,7 @@ int main()
         filesystem.delete_snapshot_volume(snapshot_id);
 
         try {
-            filesystem.get_inode_id_by_path("/etc", snapshot_id);
+            filesystem.get_inode_id_by_path(make_path_with_version("/etc", snapshot_id));
         } catch (HTMPFS_error_t & err) {
             if (err.my_errcode() != HTMPFS_NO_SUCH_SNAPSHOT)
             {
@@ -162,7 +163,7 @@ int main()
     {
         /// mixed operation, verify file content and pathname
 
-
+        INSTANCE("FILESYSTEM: mixed operation, verify file content and pathname");
         /// generate random filesystem tree
         //////////////////////////////////////////////////////////////////////////////
 
@@ -191,7 +192,7 @@ int main()
 
         // ----------------------------------------------------------------------------------------- //
 
-        const uint64_t filesystem_tree_size_seed = 8;
+        const uint64_t filesystem_tree_size_seed = 16;
         inode_smi_t filesystem(4);
 
         for (uint64_t first_level_dir_count = 1;
@@ -217,7 +218,7 @@ int main()
 //                std::cout << "MKTAG\t" << subsequent_path_name << "/" << target_name << std::endl;
                 pathname_dictionary.emplace_back(subsequent_path_name + "/" + target_name);
 
-                auto parent = filesystem.get_inode_id_by_path(subsequent_path_name, 0);
+                auto parent = filesystem.get_inode_id_by_path(make_path_with_version(subsequent_path_name, 0));
                 filesystem.make_child_dentry_under_parent(parent, target_name, true);
 
                 // increase depth
@@ -227,7 +228,8 @@ int main()
             // write content
             std::string content = gen_random_data(generate_random_num(4096, 5133));
             auto * inode = filesystem.get_inode_by_id(
-                    filesystem.get_inode_id_by_path(subsequent_path_name, 0)
+                    filesystem.get_inode_id_by_path(
+                            make_path_with_version(subsequent_path_name, 0))
             );
             inode->__override_dentry_flag(false);
             inode->write(content.c_str(), content.length(), 0);
@@ -249,7 +251,7 @@ int main()
         // dictionary as base, verify filesystem
         for (const auto & i : pathname_dictionary)
         {
-            filesystem.get_inode_id_by_path(i, 1);
+            filesystem.get_inode_id_by_path(make_path_with_version(i, 1));
         }
 
         // filesystem as base, verify dictionary
@@ -309,7 +311,7 @@ int main()
         // verify data
         for (const auto & i : files)
         {
-            inode_id_t inode = filesystem.get_inode_id_by_path(i.first, 1);
+            inode_id_t inode = filesystem.get_inode_id_by_path(make_path_with_version(i.first, 1));
             auto _data = filesystem.get_inode_by_id(inode)->to_string(1);
             if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
             {

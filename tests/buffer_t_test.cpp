@@ -2,6 +2,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <debug.h>
 
 /** @file
  *
@@ -14,6 +15,8 @@ int main(int argc, char ** argv)
 {
     {
         /// instance 1: default constructor
+        INSTANCE("BUFFER: instance 1: default constructor");
+
         buffer_t buffer;
         if (!buffer.empty())
         {
@@ -23,6 +26,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 2: constructing with buffer
+
+        INSTANCE("BUFFER: instance 2: constructing with buffer");
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         if (buffer.to_string() != hello_world)
@@ -33,6 +38,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 3: write to an empty buffer, resize enabled
+
+        INSTANCE("BUFFER: instance 3: write to an empty buffer, resize enabled");
         const char * hello_world = "Hello, world!";
         buffer_t buffer;
 
@@ -47,6 +54,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 4: write to a filled buffer, resize disabled
+
+        INSTANCE("BUFFER: instance 4: write to a filled buffer, resize disabled");
         const char * hello_world =      "Hello, world!";
         const char * Kello_world =      "Kello, world!MPKS";
         const char * kello_world_norm = "Kello, world!";
@@ -66,6 +75,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 5: write to a filled buffer, with offset
+
+        INSTANCE("BUFFER: instance 5: write to a filled buffer, with offset");
         const char * hello_world =      "Hello, world!";
         const char * hKllo_world =      "K";
         const char * hKllo_world_norm = "HKllo, world!";
@@ -83,6 +94,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 6: read from buffer, non-exceeded read
+
+        INSTANCE("BUFFER: instance 6: read from buffer, non-exceeded read");
         const char * hello_world = "Hello, world!";
         char cbuffer[32]{};
         buffer_t buffer(hello_world, strlen(hello_world));
@@ -98,6 +111,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 7: read from buffer, exceeded read
+
+        INSTANCE("BUFFER: instance 7: read from buffer, exceeded read");
         const char * hello_world = "Hello, world!";
         char cbuffer[32]{};
         buffer_t buffer(hello_world, strlen(hello_world));
@@ -113,6 +128,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 8: read/write(resize disabled) offset > buffer bank size
+
+        INSTANCE("BUFFER: instance 8: read/write(resize disabled) offset > buffer bank size");
         buffer_t buffer;
         VERIFY_DATA_OPS_LEN(buffer.read(nullptr, 1, 1), 0);
         VERIFY_DATA_OPS_LEN(buffer.write(nullptr, 1, 1, false), 0);
@@ -124,6 +141,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 9: normal write, resize disabled
+
+        INSTANCE("BUFFER: instance 9: normal write, resize disabled");
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         VERIFY_DATA_OPS_LEN(buffer.write("123", 3, 0, false), 3);
@@ -135,6 +154,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 10: hash test
+
+        INSTANCE("BUFFER: instance 10: hash test");
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         std::cout << buffer.to_string() << " : " << std::hex << buffer.hash64() << std::endl;
@@ -144,6 +165,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 11: wanted buffer bank < buffer size when writing, resize enabled
+
+        INSTANCE("BUFFER: instance 11: wanted buffer bank < buffer size when writing, resize enabled");
         const char * hello_world = "Hello, world!";
         buffer_t buffer(hello_world, strlen(hello_world));
         VERIFY_DATA_OPS_LEN(buffer.write("123", 3, 1), 3);

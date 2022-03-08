@@ -18,6 +18,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 1: bare write, resize enabled, no offset
+
+        INSTANCE("INODE: instance 1: bare write, resize enabled, no offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA(inode, "123456789");
@@ -25,6 +27,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 2: bare write, extended, resize enabled, with offset
+
+        INSTANCE("INODE: instance 2: bare write, extended, resize enabled, with offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("10", 2, 8), 2);
@@ -33,6 +37,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 3: bare write, shortage, resize enabled, without offset
+
+        INSTANCE("INODE: instance 3: bare write, shortage, resize enabled, without offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("10", 2, 0), 2);
@@ -41,6 +47,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 4: bare write, shortage, resize enabled, with offset
+
+        INSTANCE("INODE: instance 4: bare write, shortage, resize enabled, with offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("10", 2, 2), 2);
@@ -49,6 +57,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 5: bare write, shortage, resize disabled, without offset
+
+        INSTANCE("INODE: instance 5: bare write, shortage, resize disabled, without offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("10", 2, 0, false), 2);
@@ -57,6 +67,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 6: bare write, shortage, resize disabled, with offset
+
+        INSTANCE("INODE: instance 6: bare write, shortage, resize disabled, with offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("10", 2, 2, false), 2);
@@ -65,6 +77,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 7: bare write, extended, resize disabled, without offset
+
+        INSTANCE("INODE: instance 7: bare write, extended, resize disabled, without offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("0000000123456", 13, 0, false), 9);
@@ -73,6 +87,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 8: bare write, extended, resize disabled, with offset
+
+        INSTANCE("INODE: instance 8: bare write, extended, resize disabled, with offset");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
         VERIFY_DATA_OPS_LEN(inode.write("12345678910", 11, 5, false), 4);
@@ -81,12 +97,16 @@ int main(int argc, char ** argv)
 
     {
         /// instance 9: bare write, offset > bank size, resize disabled
+
+        INSTANCE("INODE: instance 9: bare write, offset > bank size, resize disabled");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 12, false), 0);
     }
 
     {
         /// instance 10: bare read
+
+        INSTANCE("INODE: instance 10: bare read");
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
@@ -96,6 +116,8 @@ int main(int argc, char ** argv)
 
     {
         /// instance 11: bare read, bank size shortage, without offset
+
+        INSTANCE("INODE: instance 11: bare read, bank size shortage, without offset");
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
@@ -104,7 +126,9 @@ int main(int argc, char ** argv)
     }
 
     {
-        /// instance 11: bare read, bank size shortage, with offset
+        /// instance 12: bare read, bank size shortage, with offset
+
+        INSTANCE("INODE: instance 12: bare read, bank size shortage, with offset");
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
@@ -114,12 +138,16 @@ int main(int argc, char ** argv)
 
     {
         /// instance 12: bare read, offset > bank size
+
+        INSTANCE("INODE: instance 13: bare read, offset > bank size");
         inode_t inode(2, 0, &filesystem);
         VERIFY_DATA_OPS_LEN(inode.read(0, nullptr, 9, 12), 0);
     }
 
     {
-        /// instance 13: invalid write access
+        /// instance 14: invalid write access
+
+        INSTANCE("INODE: instance 14: invalid write access");
         inode_t inode(2, 0, &filesystem, true);
 
         try
