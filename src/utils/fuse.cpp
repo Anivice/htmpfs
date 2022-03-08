@@ -305,9 +305,30 @@ int do_rmdir (const char * path)
 {
     try
     {
-        CHECK_RDONLY_FS(path);
+        path_t vpath(path);
+        std::string target_name = vpath.pop_end();
 
-        filesystem_inode_smi->remove_inode_by_path(path);
+        if (target_name.empty())
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+
+        // now, determine if creating snapshot volume or normal directory
+        if (vpath.size() == 2 /* {"", ".snapshot"} */ &&
+            !memcmp(vpath.last()->c_str(),
+                    SNAPSHOT_ENTRY,
+                    MIN(strlen(SNAPSHOT_ENTRY), vpath.last()->length())
+            )
+                )
+        {
+            // it's a snapshot deletion
+            filesystem_inode_smi->delete_snapshot_volume(target_name);
+        }
+        else
+        {
+            CHECK_RDONLY_FS(path);
+            filesystem_inode_smi->remove_inode_by_path(path);
+        }
 
         return 0;
     }
@@ -447,6 +468,7 @@ int do_rename (const char * path, const char * name)
         auto parent_inode = filesystem_inode_smi->get_inode_by_id(parent_inode_id);
         directory_resolver_t ori_directoryResolver(parent_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         ori_directoryResolver.remove_path(original_name);
+        ori_directoryResolver.save_current();
 
         // second, create new dentry in new inode parent
         auto target_parent_inode_id = filesystem_inode_smi->get_inode_id_by_path(target.to_string());
@@ -454,6 +476,8 @@ int do_rename (const char * path, const char * name)
         directory_resolver_t tag_directoryResolver(target_parent_inode,
                                                    FILESYSTEM_CUR_MODIFIABLE_VER);
         tag_directoryResolver.add_path(target_name, inode_id);
+        tag_directoryResolver.save_current();
+
 
         return 0;
 
@@ -575,7 +599,3 @@ int do_mknod (const char * path, mode_t mode, dev_t device)
     }
     CATCH_TAIL;
 }
-
-
-
-

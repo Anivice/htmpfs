@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     try
     {
         // TODO: block size
-        filesystem_inode_smi.set(new inode_smi_t(4));
+        filesystem_inode_smi.set(new inode_smi_t(9));
         auto *root_inode =
                 filesystem_inode_smi->get_inode_by_id(FILESYSTEM_ROOT_INODE_NUMBER);
         // set up root

@@ -905,8 +905,6 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
     directory_resolver_t directoryResolver(parent_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
     auto target_id = directoryResolver.namei(name);
-    directoryResolver.remove_path(name);
-    directoryResolver.save_current();
     auto target_it = inode_pool.find(target_id);
 
     try
@@ -929,6 +927,10 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
     }
 
     __disable_output = false;
+
+    // remove dentry
+    directoryResolver.remove_path(name);
+    directoryResolver.save_current();
 
     // remove inode in version current
     auto * vec = &snapshot_version_list.at(FILESYSTEM_CUR_MODIFIABLE_VER);
