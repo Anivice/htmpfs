@@ -8,6 +8,9 @@
 #include <cstring>
 #include <buffer_t.h>
 #include <sstream>
+#include <algorithm>
+#include <iterator>
+#include <functional>
 
 /** @file
  *
@@ -42,15 +45,13 @@ std::string gen_random_name(uint64_t length)
 
 bool can_find(const std::vector < std::string > & list, const std::string & val)
 {
-    for (const auto & i : list)
-    {
-        if (!memcmp(i.c_str(), val.c_str(), MIN(i.length(), val.length())))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of(list.cbegin(), list.cend(),
+            [&](const std::string & i)->bool
+                    {
+                        return !memcmp(i.c_str(), val.c_str(),
+                                       MIN(i.length(), val.length()));
+                    }
+            );
 }
 
 void show_vector(const std::vector <std::string> & vec)
@@ -69,15 +70,13 @@ bool compare_two_vec(const std::vector < std::string > & _vec_1,
         return false;
     }
 
-    for (const auto& i : _vec_2)
-    {
-        if (std::find(_vec_1.begin(), _vec_1.end(), i) == _vec_1.end())
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return std::ranges::all_of(_vec_2.cbegin(),
+                               _vec_2.cend(),
+                               [&](const std::string & i)->bool
+                               {
+                                   return (std::find(_vec_1.begin(), _vec_1.end(), i) != _vec_1.end());
+                               }
+    );
 }
 
 int main()
@@ -91,11 +90,9 @@ int main()
         inode_id_t etc_id =
                 filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
                                                           "etc", true);
-        inode_id_t linux_boot =
-                filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
+        filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
                                                           "linux.boot", false);
-        inode_id_t Xorg_conf =
-                filesystem.make_child_dentry_under_parent(etc_id, "Xorg.conf", false);
+        filesystem.make_child_dentry_under_parent(etc_id, "Xorg.conf", false);
 
         /* current filesystem layout:
          * /
@@ -106,14 +103,14 @@ int main()
          * |---- linux.boot
          * */
 
-        auto snapshot_id = filesystem.create_snapshot_volume();
+        filesystem.create_snapshot_volume("1");
 
         filesystem.remove_child_dentry_under_parent(
                 FILESYSTEM_ROOT_INODE_NUMBER,
                 "linux.boot");
 
-        show_vector(filesystem.export_as_filesystem_map(0));
-        show_vector(filesystem.export_as_filesystem_map(snapshot_id));
+        show_vector(filesystem.export_as_filesystem_map(FILESYSTEM_CUR_MODIFIABLE_VER));
+        show_vector(filesystem.export_as_filesystem_map("1"));
     }
 
     {
@@ -124,11 +121,9 @@ int main()
         inode_id_t etc_id =
                 filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
                                                           "etc", true);
-        inode_id_t linux_boot =
-                filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
+        filesystem.make_child_dentry_under_parent(FILESYSTEM_ROOT_INODE_NUMBER,
                                                           "linux.boot", false);
-        inode_id_t Xorg_conf =
-                filesystem.make_child_dentry_under_parent(etc_id, "Xorg.conf", false);
+        filesystem.make_child_dentry_under_parent(etc_id, "Xorg.conf", false);
 
         /* current filesystem layout:
          * /
@@ -139,19 +134,19 @@ int main()
          * |---- linux.boot
          * */
 
-        auto snapshot_id = filesystem.create_snapshot_volume();
+        filesystem.create_snapshot_volume("1");
 
         filesystem.remove_child_dentry_under_parent(
                 FILESYSTEM_ROOT_INODE_NUMBER,
                 "linux.boot");
 
-        show_vector(filesystem.export_as_filesystem_map(0));
-        show_vector(filesystem.export_as_filesystem_map(snapshot_id));
+        show_vector(filesystem.export_as_filesystem_map(FILESYSTEM_CUR_MODIFIABLE_VER));
+        show_vector(filesystem.export_as_filesystem_map("1"));
 
-        filesystem.delete_snapshot_volume(snapshot_id);
+        filesystem.delete_snapshot_volume("1");
 
         try {
-            filesystem.get_inode_id_by_path(make_path_with_version("/etc", snapshot_id));
+            filesystem.get_inode_id_by_path(make_path_with_version("/etc", "1"));
         } catch (HTMPFS_error_t & err) {
             if (err.my_errcode() != HTMPFS_NO_SUCH_SNAPSHOT)
             {
@@ -218,7 +213,7 @@ int main()
 //                std::cout << "MKTAG\t" << subsequent_path_name << "/" << target_name << std::endl;
                 pathname_dictionary.emplace_back(subsequent_path_name + "/" + target_name);
 
-                auto parent = filesystem.get_inode_id_by_path(make_path_with_version(subsequent_path_name, 0));
+                auto parent = filesystem.get_inode_id_by_path(subsequent_path_name);
                 filesystem.make_child_dentry_under_parent(parent, target_name, true);
 
                 // increase depth
@@ -228,8 +223,7 @@ int main()
             // write content
             std::string content = gen_random_data(generate_random_num(4096, 5133));
             auto * inode = filesystem.get_inode_by_id(
-                    filesystem.get_inode_id_by_path(
-                            make_path_with_version(subsequent_path_name, 0))
+                    filesystem.get_inode_id_by_path(subsequent_path_name)
             );
             inode->__override_dentry_flag(false);
             inode->write(content.c_str(), content.length(), 0);
@@ -241,9 +235,9 @@ int main()
         //////////////////////////////////////////////////////////////////////////////
 
         // create a snapshot of current filesystem
-        filesystem.create_snapshot_volume();
+        filesystem.create_snapshot_volume("1");
 
-        show_vector(filesystem.export_as_filesystem_map(1));
+        show_vector(filesystem.export_as_filesystem_map("1"));
 
         /// verify snapshot tree
 
@@ -251,11 +245,11 @@ int main()
         // dictionary as base, verify filesystem
         for (const auto & i : pathname_dictionary)
         {
-            filesystem.get_inode_id_by_path(make_path_with_version(i, 1));
+            filesystem.get_inode_id_by_path(make_path_with_version(i, "1"));
         }
 
         // filesystem as base, verify dictionary
-        auto vec = filesystem.export_as_filesystem_map(1);
+        auto vec = filesystem.export_as_filesystem_map("1");
         for (const auto & i : vec)
         {
             if (!can_find(pathname_dictionary, i))
@@ -286,16 +280,16 @@ int main()
         }
 
         // yea let me take a snapshot real quick
-        filesystem.create_snapshot_volume();
+        filesystem.create_snapshot_volume("2");
 
         if (!compare_two_vec(
-                filesystem.export_as_filesystem_map(0),
-                filesystem.export_as_filesystem_map(2)))
+                filesystem.export_as_filesystem_map(FILESYSTEM_CUR_MODIFIABLE_VER),
+                filesystem.export_as_filesystem_map("2")))
         {
             return EXIT_FAILURE;
         }
 
-        auto _vec = filesystem.export_as_filesystem_map(2);
+        auto _vec = filesystem.export_as_filesystem_map("2");
         std::sort(_vec.begin(), _vec.end(), []
                 (const std::string& first, const std::string& second){
             return first.size() > second.size();
@@ -311,8 +305,8 @@ int main()
         // verify data
         for (const auto & i : files)
         {
-            inode_id_t inode = filesystem.get_inode_id_by_path(make_path_with_version(i.first, 1));
-            auto _data = filesystem.get_inode_by_id(inode)->to_string(1);
+            inode_id_t inode = filesystem.get_inode_id_by_path(make_path_with_version(i.first, "1"));
+            auto _data = filesystem.get_inode_by_id(inode)->to_string("1");
             if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
             {
                 return EXIT_FAILURE;

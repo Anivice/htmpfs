@@ -1,6 +1,5 @@
 #include <directory_resolver.h>
 #include <string>
-#include <cstring>
 #include <iostream>
 #include <htmpfs.h>
 
@@ -11,7 +10,7 @@
 
 #define VERIFY_DATA(val, tag) if ((tag) != (val)) { return EXIT_FAILURE; } __asm__("nop")
 
-int main(int argc, char ** argv)
+int main()
 {
     std::vector < std::string > all_path;
     all_path.emplace_back("usr"); // 0xF0
@@ -26,7 +25,7 @@ int main(int argc, char ** argv)
         INSTANCE("DIR RESOLV: instance 1: add entries in directory resolver, confined in cache");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
-        directory_resolver_t directory_resolver(&inode, 0);
+        directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
         uint64_t count = 0xF0;
         for (const auto& i : all_path)
@@ -48,7 +47,7 @@ int main(int argc, char ** argv)
         INSTANCE("DIR RESOLV: instance 2: add entries in directory resolver save to inode");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
-        directory_resolver_t directory_resolver(&inode, 0);
+        directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
         uint64_t count = 0xF0;
         for (const auto& i : all_path)
@@ -58,7 +57,7 @@ int main(int argc, char ** argv)
         // save changes
         directory_resolver.save_current();
 
-        directory_resolver_t directory_resolver2(&inode, 0);
+        directory_resolver_t directory_resolver2(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
         uint64_t off = 0, _count = 0xF0;
         for (const auto & i : directory_resolver2)
@@ -76,7 +75,7 @@ int main(int argc, char ** argv)
         {
             inode_smi_t filesystem(2);
             inode_t inode(2, 0, &filesystem, false);
-            directory_resolver_t directory_resolver(&inode, 0);
+            directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         }
         catch (HTMPFS_error_t & err)
         {
@@ -93,7 +92,7 @@ int main(int argc, char ** argv)
         INSTANCE("DIR RESOLV: instance 4: export vector");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
-        directory_resolver_t directory_resolver(&inode, 0);
+        directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
         uint64_t count = 0xF0;
         for (const auto& i : all_path)
@@ -119,7 +118,7 @@ int main(int argc, char ** argv)
         {
             inode_smi_t filesystem(2);
             inode_t inode(2, 0, &filesystem, true);
-            directory_resolver_t directory_resolver(&inode, 0);
+            directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
             directory_resolver.add_path("dir", 0);
             directory_resolver.add_path("dir", 0);
         }
@@ -138,7 +137,7 @@ int main(int argc, char ** argv)
         INSTANCE("DIR RESOLV: instance 6: makep dentry, both successful and failed");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
-        directory_resolver_t directory_resolver(&inode, 0);
+        directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         directory_resolver.add_path("dir", 0);
 
         VERIFY_DATA(directory_resolver.namei("dir"), 0);
@@ -162,7 +161,7 @@ int main(int argc, char ** argv)
         INSTANCE("DIR RESOLV: instance 7: path remove, inter-actively, both successful and failed");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
-        directory_resolver_t directory_resolver(&inode, 0);
+        directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
         uint64_t count = 0xF0;
         for (const auto& i : all_path)
@@ -172,7 +171,7 @@ int main(int argc, char ** argv)
         // save changes
         directory_resolver.save_current();
 
-        directory_resolver_t directory_resolver2(&inode, 0);
+        directory_resolver_t directory_resolver2(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         directory_resolver2.remove_path("etc");
         directory_resolver2.remove_path("sys");
         directory_resolver2.save_current();
@@ -215,7 +214,7 @@ int main(int argc, char ** argv)
         INSTANCE("DIR RESOLV: instance 8: check availability, both successful and failed");
         inode_smi_t filesystem(2);
         inode_t inode(2, 0, &filesystem, true);
-        directory_resolver_t directory_resolver(&inode, 0);
+        directory_resolver_t directory_resolver(&inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         directory_resolver.add_path("dir", 0);
 
         if (!directory_resolver.check_availability("etc"))

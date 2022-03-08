@@ -1,13 +1,15 @@
 #ifndef HTMPFS_HTMPFS_TYPES_H
 #define HTMPFS_HTMPFS_TYPES_H
 
+#include <string>
+
 #define LEFT_SHIFT64(val, bit_count)  ((uint64_t)((uint64_t)(val) << (uint64_t)bit_count))
 #define RIGHT_SHIFT64(val, bit_count) ((uint64_t)((uint64_t)(val) >> (uint64_t)bit_count))
 
 #define FILESYSTEM_ROOT_INODE_NUMBER    0x00
-#define FILESYSTEM_CUR_MODIFIABLE_VER   0x00
+#define FILESYSTEM_CUR_MODIFIABLE_VER   "current"
 
-typedef uint64_t snapshot_ver_t;
+typedef std::string snapshot_ver_t;
 typedef uint64_t buffer_id_t;
 typedef uint64_t inode_id_t;
 struct unique_buffer_pkg_id_t

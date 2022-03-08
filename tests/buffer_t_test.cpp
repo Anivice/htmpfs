@@ -11,7 +11,7 @@
 
 #define VERIFY_DATA_OPS_LEN(operation, len) if ((operation) != len) { return EXIT_FAILURE; } __asm__("nop")
 
-int main(int argc, char ** argv)
+int main()
 {
     {
         /// instance 1: default constructor

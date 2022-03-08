@@ -20,7 +20,7 @@ void func1()
     func2();
 }
 
-int main(int argc, char ** argv)
+int main()
 {
     FUNCTION_INFO(2);
     OBTAIN_STACK_FRAME(2);

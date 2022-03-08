@@ -9,13 +9,13 @@ timespec get_current_time()
 
 std::string make_path_with_version(const std::string& path, snapshot_ver_t version)
 {
-    if (version == 0)
+    if (version == FILESYSTEM_CUR_MODIFIABLE_VER)
     {
         return path;
     }
 
     std::string ret;
-    ret += "/.snapshot/" + std::to_string(version);
+    ret += "/.snapshot/" + version;
     ret += path;
     return ret;
 }

@@ -54,7 +54,7 @@ void HTMPFS_error_t::_output_error_message() const noexcept
 /// used for HTMPFS_error_t::fill_out_errno()
 #define ERRNO_SWITCH_END default : ; } __asm__("nop")
 
-void HTMPFS_error_t::fill_out_errno()
+void HTMPFS_error_t::fill_out_errno() const
 {
     if (my_errno() == 0)
     {

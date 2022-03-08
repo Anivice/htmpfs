@@ -81,26 +81,26 @@ public:
     /// @param length read length
     /// @param offset read offset
     /// @return length of buffer read
-    htmpfs_size_t read(snapshot_ver_t version,
+    htmpfs_size_t read(const snapshot_ver_t& version,
                        char * buffer,
                        htmpfs_size_t length,
                        htmpfs_size_t offset);
 
     /// output buffer as string
-    std::string to_string(snapshot_ver_t version);
+    std::string to_string(const snapshot_ver_t& version);
 
     /// current buffer bank size by version
-    htmpfs_size_t current_data_size(snapshot_ver_t version);
+    htmpfs_size_t current_data_size(const snapshot_ver_t& version);
 
     /// create a new snapshot volume
     /// @param volume_version volume version, provided by user
-    void create_new_volume(snapshot_ver_t volume_version);
+    void create_new_volume(const snapshot_ver_t& volume_version);
 
     /// delete a snapshot volume
     /// @param volume_version volume version, provided by user
-    void delete_volume(snapshot_ver_t volume_version);
+    void delete_volume(const snapshot_ver_t& volume_version);
 
-    htmpfs_size_t block_count(snapshot_ver_t version);
+    htmpfs_size_t block_count(const snapshot_ver_t& version);
 
     friend class inode_smi_t;
 };
@@ -188,6 +188,10 @@ private:
     buffer_t * get_buffer_by_id(buffer_id_t buffer_id);
 
 public:
+    /// public accessible snapshot version list
+    const std::map < snapshot_ver_t, std::vector < inode_result_t > > &
+            _snapshot_version_list = snapshot_version_list;
+
     explicit inode_smi_t(htmpfs_size_t _block_size);
 
     /// get inode pointer by path
@@ -213,12 +217,12 @@ public:
     void remove_inode_by_path(const std::string & pathname);
 
     /// create a snapshot volume
-    /// @return snapshot volume version
-    snapshot_ver_t create_snapshot_volume();
+    /// @param snapshot_ver snapshot volume name
+    void create_snapshot_volume(const snapshot_ver_t& snapshot_ver);
 
     /// create a snapshot volume
     /// @param version snapshot version
-    void delete_snapshot_volume(snapshot_ver_t version);
+    void delete_snapshot_volume(const snapshot_ver_t& version);
 
     /// export current filesystem layout as filesystem map
     /// @retuen filesystem layout

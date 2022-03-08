@@ -52,7 +52,7 @@ private:
 
 public:
     /// fill out errno information based on error code
-    void fill_out_errno();
+    void fill_out_errno() const;
 
     /// Generate a error with error code
     /** @param _code Your error code

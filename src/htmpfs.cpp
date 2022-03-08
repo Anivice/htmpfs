@@ -14,7 +14,7 @@ inode_t::inode_t(uint64_t _block_size, inode_id_t _inode_id, inode_smi_t * _file
 : block_size(_block_size), inode_id(_inode_id), filesystem(_filesystem), is_dentry(_is_dentry)
 {
     // create root snapshot
-    buffer_map.emplace(0, std::vector < buffer_result_t >());
+    buffer_map.emplace(FILESYSTEM_CUR_MODIFIABLE_VER, std::vector < buffer_result_t >());
 }
 
 htmpfs_size_t inode_t::write(const char *buffer,
@@ -47,7 +47,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
         resize = true;
     }
 
-    auto &snapshot_0_block_list = buffer_map.at(0);
+    auto &snapshot_0_block_list = buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER);
 
     // if resizing buffer
     if (resize)
@@ -87,12 +87,14 @@ htmpfs_size_t inode_t::write(const char *buffer,
                 i++)
             {
                 // if frozen buffer detected
-                if ((buffer_map.at(0)[i + existing_buffer_pending_for_modification_start])._is_snapshoted)
+                if ((buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)
+                    [i + existing_buffer_pending_for_modification_start])._is_snapshoted)
                 {
                     // read data from old buffer
                     char * tmp = new char [block_size];
                     auto frozen_buffer =
-                            &buffer_map.at(0)[i + existing_buffer_pending_for_modification_start];
+                            &buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)
+                            [i + existing_buffer_pending_for_modification_start];
                     uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
 
                     // allocate new buffer
@@ -100,7 +102,8 @@ htmpfs_size_t inode_t::write(const char *buffer,
                     new_buffer.data->write(tmp, len, 0);
 
                     // replace buffer
-                    buffer_map.at(0)[i + existing_buffer_pending_for_modification_start] = new_buffer;
+                    buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)
+                        [i + existing_buffer_pending_for_modification_start] = new_buffer;
 
                     delete []tmp;
                 }
@@ -144,11 +147,11 @@ htmpfs_size_t inode_t::write(const char *buffer,
                  i++)
             {
                 // if frozen buffer detected
-                if ((buffer_map.at(0)[i])._is_snapshoted)
+                if ((buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i])._is_snapshoted)
                 {
                     // read data from old buffer
                     char * tmp = new char [block_size];
-                    auto frozen_buffer = &buffer_map.at(0)[i];
+                    auto frozen_buffer = &buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i];
                     uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
 
                     // allocate new buffer
@@ -156,7 +159,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
                     new_buffer.data->write(tmp, len, 0);
 
                     // replace buffer
-                    buffer_map.at(0)[i] = new_buffer;
+                    buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i] = new_buffer;
 
                     delete []tmp;
                 }
@@ -279,13 +282,13 @@ htmpfs_size_t inode_t::write(const char *buffer,
     else // resize disabled
     {
         htmpfs_size_t write_size;
-        if (offset > current_data_size(0)) // write beyond buffer bank
+        if (offset > current_data_size(FILESYSTEM_CUR_MODIFIABLE_VER)) // write beyond buffer bank
         {
             return 0;
         }
-        else if (offset + length > current_data_size(0)) // bank size shortage
+        else if (offset + length > current_data_size(FILESYSTEM_CUR_MODIFIABLE_VER)) // bank size shortage
         {
-            write_size = current_data_size(0) - offset;
+            write_size = current_data_size(FILESYSTEM_CUR_MODIFIABLE_VER) - offset;
         }
         else // write length OK
         {
@@ -305,11 +308,11 @@ htmpfs_size_t inode_t::write(const char *buffer,
              i++)
         {
             // if frozen buffer detected
-            if ((buffer_map.at(0)[i])._is_snapshoted)
+            if ((buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i])._is_snapshoted)
             {
                 // read data from old buffer
                 char * tmp = new char [block_size];
-                auto frozen_buffer = &buffer_map.at(0)[i];
+                auto frozen_buffer = &buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i];
                 uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
 
                 // allocate new buffer
@@ -317,7 +320,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
                 new_buffer.data->write(tmp, len, 0);
 
                 // replace buffer
-                buffer_map.at(0)[i] = new_buffer;
+                buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i] = new_buffer;
 
                 delete []tmp;
             }
@@ -427,7 +430,7 @@ htmpfs_size_t inode_t::write(const char *buffer,
     }
 }
 
-htmpfs_size_t inode_t::read(snapshot_ver_t version,
+htmpfs_size_t inode_t::read(const snapshot_ver_t& version,
                             char *buffer,
                             htmpfs_size_t length,
                             htmpfs_size_t offset)
@@ -529,7 +532,7 @@ htmpfs_size_t inode_t::read(snapshot_ver_t version,
     return read_size;
 }
 
-std::string inode_t::to_string(snapshot_ver_t version)
+std::string inode_t::to_string(const snapshot_ver_t& version)
 {
     if (buffer_map.empty() || !current_data_size(version))
     {
@@ -557,7 +560,7 @@ std::string inode_t::to_string(snapshot_ver_t version)
     return ret;
 }
 
-htmpfs_size_t inode_t::current_data_size(snapshot_ver_t version)
+htmpfs_size_t inode_t::current_data_size(const snapshot_ver_t& version)
 {
     auto it = buffer_map.find(version);
     if (it == buffer_map.end())
@@ -575,7 +578,7 @@ htmpfs_size_t inode_t::current_data_size(snapshot_ver_t version)
     return size;
 }
 
-void inode_t::create_new_volume(snapshot_ver_t volume_version)
+void inode_t::create_new_volume(const snapshot_ver_t& volume_version)
 {
     if (buffer_map.find(volume_version) != buffer_map.end())
     {
@@ -584,7 +587,7 @@ void inode_t::create_new_volume(snapshot_ver_t volume_version)
 
     std::vector < buffer_result_t > new_volume;
 
-    for (auto & i : buffer_map.at(0))
+    for (auto & i : buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER))
     {
         // frozen this buffer
         i._is_snapshoted = 1;
@@ -597,9 +600,9 @@ void inode_t::create_new_volume(snapshot_ver_t volume_version)
     buffer_map.emplace(volume_version, new_volume);
 }
 
-void inode_t::delete_volume(snapshot_ver_t volume_version)
+void inode_t::delete_volume(const snapshot_ver_t& volume_version)
 {
-    if ((volume_version == 0)
+    if ((volume_version == FILESYSTEM_CUR_MODIFIABLE_VER)
     || (buffer_map.find(volume_version) == buffer_map.end()))
     {
         THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
@@ -614,7 +617,7 @@ void inode_t::delete_volume(snapshot_ver_t volume_version)
     buffer_map.erase(volume_version);
 }
 
-htmpfs_size_t inode_t::block_count(snapshot_ver_t version)
+htmpfs_size_t inode_t::block_count(const snapshot_ver_t& version)
 {
     if (buffer_map.find(version) == buffer_map.end())
     {
@@ -665,7 +668,7 @@ snapshot_ver_t if_snapshot(const std::string & path, std::string & output)
     if (path == "/")
     {
         output = path;
-        return 0;
+        return FILESYSTEM_CUR_MODIFIABLE_VER;
     }
 
     path_t before_parse_vec_path(path);
@@ -673,15 +676,15 @@ snapshot_ver_t if_snapshot(const std::string & path, std::string & output)
     head++;
     if (head == before_parse_vec_path.end())
     {
-        return 0;
+        return FILESYSTEM_CUR_MODIFIABLE_VER;
     }
 
-    snapshot_ver_t version = 0;
+    snapshot_ver_t version = FILESYSTEM_CUR_MODIFIABLE_VER;
     if (*head == ".snapshot")
     {
         // get snapshot version
         head++;
-        version = std::strtol((*head).c_str(), nullptr, 10);
+        version = *head;
 
         // parse pathname
         head++;
@@ -693,7 +696,7 @@ snapshot_ver_t if_snapshot(const std::string & path, std::string & output)
     else
     {
         output = path;
-        return 0;
+        return FILESYSTEM_CUR_MODIFIABLE_VER;
     }
 
     return version;
@@ -701,7 +704,12 @@ snapshot_ver_t if_snapshot(const std::string & path, std::string & output)
 
 inode_id_t inode_smi_t::get_inode_id_by_path(const std::string & path)
 {
-    if (path.empty() || path[0] != '/')
+    if (path.empty())
+    {
+        return FILESYSTEM_ROOT_INODE_NUMBER;
+    }
+
+    if (path[0] != '/')
     {
         THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
     }
@@ -742,8 +750,8 @@ inode_smi_t::inode_smi_t(htmpfs_size_t _block_size)
             }
     );
 
-    filesystem_root = &inode_pool.at(0).inode;
-    snapshot_version_list.emplace(0,
+    filesystem_root = &inode_pool.at(FILESYSTEM_ROOT_INODE_NUMBER).inode;
+    snapshot_version_list.emplace(FILESYSTEM_CUR_MODIFIABLE_VER,
                                   std::vector <inode_result_t >
                                           ({
                                               inode_result_t
@@ -777,7 +785,7 @@ inode_id_t inode_smi_t::make_child_dentry_under_parent(inode_id_t parent_inode_i
     // get parent inode pointer
     inode_t * parent_inode = &it->second.inode;
     // directory resolver
-    directory_resolver_t directoryResolver(parent_inode, 0);
+    directory_resolver_t directoryResolver(parent_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
     // check name availability
     if (!directoryResolver.check_availability(name))
@@ -805,7 +813,7 @@ inode_id_t inode_smi_t::make_child_dentry_under_parent(inode_id_t parent_inode_i
         .inode = &inode_pool.at(new_inode_id).inode
             };
 
-    snapshot_version_list.at(0).emplace_back(inodeResult);
+    snapshot_version_list.at(FILESYSTEM_CUR_MODIFIABLE_VER).emplace_back(inodeResult);
 
     return new_inode_id;
 }
@@ -874,7 +882,7 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
     // get parent inode pointer
     inode_t * parent_inode = &it->second.inode;
     // directory resolver
-    directory_resolver_t directoryResolver(parent_inode, 0);
+    directory_resolver_t directoryResolver(parent_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
 
     auto target_id = directoryResolver.namei(name);
     directoryResolver.remove_path(name);
@@ -884,7 +892,7 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
     try
     {
         __disable_output = true;
-        directory_resolver_t if_target_is_dir(&target_it->second.inode, 0);
+        directory_resolver_t if_target_is_dir(&target_it->second.inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         if (if_target_is_dir.target_count() != 0)
         {
             __disable_output = false;
@@ -902,8 +910,8 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
 
     __disable_output = false;
 
-    // remove inode in version 0
-    auto * vec = &snapshot_version_list.at(0);
+    // remove inode in version current
+    auto * vec = &snapshot_version_list.at(FILESYSTEM_CUR_MODIFIABLE_VER);
     for (auto vec_it = vec->begin(); vec_it != vec->end(); vec_it++)
     {
         if (vec_it->id == target_id)
@@ -1007,10 +1015,14 @@ buffer_t *inode_smi_t::get_buffer_by_id(buffer_id_t buffer_id)
     return &it->second.buffer;
 }
 
-snapshot_ver_t inode_smi_t::create_snapshot_volume()
+void inode_smi_t::create_snapshot_volume(const snapshot_ver_t& snapshot_ver)
 {
-    auto snapshot_ver = get_free_id(snapshot_version_list);
-    auto root_vec = snapshot_version_list.at(0);
+    if (snapshot_version_list.find(snapshot_ver) != snapshot_version_list.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_DOUBLE_SNAPSHOT);
+    }
+
+    auto root_vec = snapshot_version_list.at(FILESYSTEM_CUR_MODIFIABLE_VER);
     for (auto i : root_vec)
     {
         link_inode(i.id);
@@ -1018,11 +1030,9 @@ snapshot_ver_t inode_smi_t::create_snapshot_volume()
     }
 
     snapshot_version_list.emplace(snapshot_ver, root_vec);
-
-    return snapshot_ver;
 }
 
-void inode_smi_t::delete_snapshot_volume(snapshot_ver_t version)
+void inode_smi_t::delete_snapshot_volume(const snapshot_ver_t& version)
 {
     if (snapshot_version_list.find(version) == snapshot_version_list.end())
     {
@@ -1054,7 +1064,7 @@ void inode_smi_t::remove_inode_by_path(const std::string &pathname)
     auto it = ++path.begin();
     for (uint64_t i = 0; i< path.size() - 1 /* filesystem root */ - 1 /* last target */; i++)
     {
-        directory_resolver_t directoryResolver(ops_inode, 0);
+        directory_resolver_t directoryResolver(ops_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         auto inode_id = directoryResolver.namei(*it);
         ops_inode = get_inode_by_id(inode_id);
         it++;

@@ -23,8 +23,8 @@ public:
     buffer_t() = default;
     buffer_t(const char *, htmpfs_size_t);
 
-    /// clear buffer
-    void clear() { data.clear(); }
+//    /// clear buffer
+//    void clear() { data.clear(); }
 
     /// read(buffer, length, offset)
     /// @param buffer buffer output storage

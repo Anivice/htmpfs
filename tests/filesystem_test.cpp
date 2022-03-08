@@ -8,6 +8,8 @@
 #include <cstring>
 #include <buffer_t.h>
 #include <sstream>
+#include <algorithm>
+#include <functional>
 
 /** @file
  *
@@ -42,15 +44,12 @@ std::string gen_random_name(uint64_t length)
 
 bool can_find(const std::vector < std::string > & list, const std::string & val)
 {
-    for (const auto & i : list)
-    {
-        if (!memcmp(i.c_str(), val.c_str(), MIN(i.length(), val.length())))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of(list.cbegin(), list.cend(),
+                        [&](const std::string & i)
+                            {
+                                return !memcmp(i.c_str(), val.c_str(), MIN(i.length(), val.length()));
+                            }
+                        );
 }
 
 int main()
@@ -72,7 +71,7 @@ int main()
                   ->write(data.c_str(), data.length(), 0);
 
         if(!!memcmp(filesystem.get_inode_by_id(FILESYSTEM_ROOT_INODE_NUMBER)
-                              ->to_string(0).c_str(),
+                              ->to_string(FILESYSTEM_CUR_MODIFIABLE_VER).c_str(),
                     data.c_str(), 5391))
         {
             return EXIT_FAILURE;
@@ -115,8 +114,8 @@ int main()
             VERIFY_DATA(err.my_errcode(), HTMPFS_NOT_A_DIRECTORY);
         }
 
-        VERIFY_DATA(filesystem.get_inode_by_id(linux_boot)->to_string(0), data);
-        VERIFY_DATA(filesystem.get_inode_by_id(Xorg_conf)->to_string(0), data);
+        VERIFY_DATA(filesystem.get_inode_by_id(linux_boot)->to_string(FILESYSTEM_CUR_MODIFIABLE_VER), data);
+        VERIFY_DATA(filesystem.get_inode_by_id(Xorg_conf)->to_string(FILESYSTEM_CUR_MODIFIABLE_VER), data);
     }
 
     {
@@ -196,13 +195,9 @@ int main()
 
         inode_id_t X11 =
                 filesystem.make_child_dentry_under_parent(etc_id, "X11", true);
-        inode_id_t x11_intel =
-                filesystem.make_child_dentry_under_parent(X11, "x11_intel.conf", false);
-        inode_id_t Xorg_conf =
-                filesystem.make_child_dentry_under_parent(X11, "Xorg.conf", false);
-
-        inode_id_t linux_kernel =
-                filesystem.make_child_dentry_under_parent(boot, "linux", false);
+        filesystem.make_child_dentry_under_parent(X11, "x11_intel.conf", false);
+        filesystem.make_child_dentry_under_parent(X11, "Xorg.conf", false);
+        filesystem.make_child_dentry_under_parent(boot, "linux", false);
 
         /* current filesystem layout:
          * /
@@ -218,7 +213,7 @@ int main()
          * |         |-------- linux
          * */
 
-        filesystem.export_as_filesystem_map(0);
+        filesystem.export_as_filesystem_map(FILESYSTEM_CUR_MODIFIABLE_VER);
     }
 
 #ifdef CMAKE_BUILD_DEBUG
@@ -307,7 +302,7 @@ int main()
         }
 
         // filesystem as base, verify dictionary
-        auto vec = filesystem.export_as_filesystem_map(0);
+        auto vec = filesystem.export_as_filesystem_map(FILESYSTEM_CUR_MODIFIABLE_VER);
         for (const auto & i : vec)
         {
             if (!can_find(pathname_dictionary, i))
@@ -320,7 +315,7 @@ int main()
         for (const auto & i : files)
         {
             inode_id_t inode = filesystem.get_inode_id_by_path(i.first);
-            auto _data = filesystem.get_inode_by_id(inode)->to_string(0);
+            auto _data = filesystem.get_inode_by_id(inode)->to_string(FILESYSTEM_CUR_MODIFIABLE_VER);
             if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
             {
                 return EXIT_FAILURE;

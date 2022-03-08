@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <buffer_t.h>
+#include <htmpfs_types.h>
 
 class inode_t;
 
@@ -30,7 +31,7 @@ private:
 
     std::vector < path_pack_t > path;
     inode_t * associated_inode;
-    uint64_t access_version;
+    snapshot_ver_t access_version;
 
     class __dentry_only
     {
@@ -52,7 +53,7 @@ public:
     /// create a directory resolver
     /// @param _associated_inode associated inode
     /// @param ver snapshot version
-    explicit directory_resolver_t(inode_t * _associated_inode, uint64_t ver);
+    explicit directory_resolver_t(inode_t * _associated_inode, snapshot_ver_t ver);
 
     /// refresh from inode
     void refresh();

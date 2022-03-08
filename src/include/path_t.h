@@ -23,6 +23,12 @@ public:
     iterator        end     ()                      { return pathname.end();        }
     htmpfs_size_t   size    ()                      { return pathname.size();       }
     iterator        last    ()                      { return (--pathname.end());    }
+    std::string     pop_end ()
+        {
+            std::string ret = * (--pathname.end());
+            pathname.pop_back();
+            return ret;
+        }
 };
 
 #endif //HTMPFS_PATH_T_H

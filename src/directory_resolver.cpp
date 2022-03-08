@@ -2,6 +2,9 @@
 #include <htmpfs_error.h>
 #include <htmpfs.h>
 #include <debug.h>
+#include <functional>
+#include <algorithm>
+#include <utility>
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -36,7 +39,7 @@ inline void delete_elem_of_str_at_head(std::string & str)
     }
 }
 
-directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t ver)
+directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, snapshot_ver_t ver)
 {
     if (!_associated_inode->__is_dentry())
     {
@@ -44,7 +47,7 @@ directory_resolver_t::directory_resolver_t(inode_t *_associated_inode, uint64_t 
     }
 
     associated_inode = _associated_inode;
-    access_version = ver;
+    access_version = std::move(ver);
     refresh();
 }
 
@@ -142,16 +145,11 @@ void directory_resolver_t::save_current()
 
 bool directory_resolver_t::check_availability(const std::string &pathname)
 {
-    for (const auto& i : path)
-    {
-        if (!memcmp(i.pathname.c_str(), pathname.c_str(),
-                    MIN(i.pathname.length(), pathname.length())))
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return !std::ranges::any_of(path.cbegin(), path.cend(), [&](const path_pack_t & i)->bool
+                        {
+                            return !memcmp(i.pathname.c_str(), pathname.c_str(),
+                                            MIN(i.pathname.length(), pathname.length()));
+                        });
 }
 
 void directory_resolver_t::remove_path(const std::string &pathname)

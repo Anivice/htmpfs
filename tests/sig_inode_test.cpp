@@ -9,7 +9,7 @@
  */
 
 #define VERIFY_DATA_OPS_LEN(operation, len) if ((operation) != len) { return EXIT_FAILURE; } __asm__("nop")
-#define VERIFY_DATA(ops, data) if ((ops).to_string(0) != (data)) { return EXIT_FAILURE; } __asm__("nop")
+#define VERIFY_DATA(ops, data) if ((ops).to_string(FILESYSTEM_CUR_MODIFIABLE_VER) != (data)) { return EXIT_FAILURE; } __asm__("nop")
 #define VERIFY_DATA_BARE(ops, data) if (std::string(ops) != std::string(data)) { return EXIT_FAILURE; } __asm__("nop")
 
 int main(int argc, char ** argv)
@@ -110,7 +110,7 @@ int main(int argc, char ** argv)
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
-        VERIFY_DATA_OPS_LEN(inode.read(0, buff, 9, 0), 9);
+        VERIFY_DATA_OPS_LEN(inode.read(FILESYSTEM_CUR_MODIFIABLE_VER, buff, 9, 0), 9);
         VERIFY_DATA_BARE(buff, "123456789");
     }
 
@@ -121,7 +121,7 @@ int main(int argc, char ** argv)
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
-        VERIFY_DATA_OPS_LEN(inode.read(0, buff, sizeof(buff), 0), 9);
+        VERIFY_DATA_OPS_LEN(inode.read(FILESYSTEM_CUR_MODIFIABLE_VER, buff, sizeof(buff), 0), 9);
         VERIFY_DATA_BARE(buff, "123456789");
     }
 
@@ -132,7 +132,7 @@ int main(int argc, char ** argv)
         inode_t inode(2, 0, &filesystem);
         char buff[512]{};
         VERIFY_DATA_OPS_LEN(inode.write("123456789", 9, 0), 9);
-        VERIFY_DATA_OPS_LEN(inode.read(0, buff, sizeof(buff), 3), 6);
+        VERIFY_DATA_OPS_LEN(inode.read(FILESYSTEM_CUR_MODIFIABLE_VER, buff, sizeof(buff), 3), 6);
         VERIFY_DATA_BARE(buff, "456789");
     }
 
@@ -141,7 +141,7 @@ int main(int argc, char ** argv)
 
         INSTANCE("INODE: instance 13: bare read, offset > bank size");
         inode_t inode(2, 0, &filesystem);
-        VERIFY_DATA_OPS_LEN(inode.read(0, nullptr, 9, 12), 0);
+        VERIFY_DATA_OPS_LEN(inode.read(FILESYSTEM_CUR_MODIFIABLE_VER, nullptr, 9, 12), 0);
     }
 
     {
