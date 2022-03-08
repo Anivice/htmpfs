@@ -24,6 +24,16 @@ catch (std::exception & error)                                                  
     return -errno;                                                                              \
 } __asm__("nop")
 
+#define CHECK_RDONLY_FS(path)                                           \
+{                                                                       \
+    std::string parsed_path;                                            \
+    snapshot_ver_t version = if_snapshot(path, parsed_path);            \
+    if (version != FILESYSTEM_CUR_MODIFIABLE_VER)                       \
+    {                                                                   \
+        return -EROFS;                                                  \
+    }                                                                   \
+} __asm__("nop")
+
 int do_getattr (const char *path, struct stat *stbuf)
 {
     try
@@ -124,6 +134,8 @@ int do_mkdir (const char * path, mode_t mode)
         }
         else
         {
+            CHECK_RDONLY_FS(path);
+
             auto parent_id = filesystem_inode_smi->get_inode_id_by_path(vpath.to_string());
             auto child_id = filesystem_inode_smi->
                     make_child_dentry_under_parent(parent_id, target_name, true);
@@ -147,6 +159,8 @@ int do_chmod (const char * path, mode_t mode)
 {
     try
     {
+        CHECK_RDONLY_FS(path);
+
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
         inode->fs_stat.st_mode = mode;
@@ -160,6 +174,8 @@ int do_chown (const char * path, uid_t uid, gid_t gid)
 {
     try
     {
+        CHECK_RDONLY_FS(path);
+
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
         inode->fs_stat.st_uid = uid;
@@ -174,6 +190,8 @@ int do_create (const char * path, mode_t mode, struct fuse_file_info *)
 {
     try
     {
+        CHECK_RDONLY_FS(path);
+
         path_t vpath(path);
         auto target_name = vpath.pop_end();
 
@@ -244,6 +262,8 @@ int do_write (const char * path, const char * buffer, size_t size, off_t offset,
 {
     try
     {
+        CHECK_RDONLY_FS(path);
+
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
         return (int)inode->write(buffer, size, offset);
@@ -255,15 +275,11 @@ int do_utimens (const char * path, const struct timespec tv[2])
 {
     try
     {
-        std::string parsed_path;
-        snapshot_ver_t version = if_snapshot(path, parsed_path);
+        CHECK_RDONLY_FS(path);
+
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
 
-        if (version != FILESYSTEM_CUR_MODIFIABLE_VER)
-        {
-            return -EROFS;  // Read-only filesystem (POSIX.1-2001)
-        }
         inode->fs_stat.st_atim = tv[0];
         inode->fs_stat.st_mtim = tv[1];
 
@@ -276,13 +292,7 @@ int do_unlink (const char * path)
 {
     try
     {
-        std::string parsed_path;
-        snapshot_ver_t version = if_snapshot(path, parsed_path);
-
-        if (version != FILESYSTEM_CUR_MODIFIABLE_VER)
-        {
-            return -EROFS;  // Read-only filesystem (POSIX.1-2001)
-        }
+        CHECK_RDONLY_FS(path);
 
         filesystem_inode_smi->remove_inode_by_path(path);
 
@@ -295,13 +305,7 @@ int do_rmdir (const char * path)
 {
     try
     {
-        std::string parsed_path;
-        snapshot_ver_t version = if_snapshot(path, parsed_path);
-
-        if (version != FILESYSTEM_CUR_MODIFIABLE_VER)
-        {
-            return -EROFS;  // Read-only filesystem (POSIX.1-2001)
-        }
+        CHECK_RDONLY_FS(path);
 
         filesystem_inode_smi->remove_inode_by_path(path);
 
@@ -329,6 +333,8 @@ int do_truncate (const char * path, off_t size)
 {
     try
     {
+        CHECK_RDONLY_FS(path);
+
         inode_id_t new_inode_id;
 
         try
@@ -376,3 +382,200 @@ int do_truncate (const char * path, off_t size)
     }
     CATCH_TAIL;
 }
+
+int do_symlink  (const char * path, const char * target)
+{
+    try
+    {
+        CHECK_RDONLY_FS(path);
+        CHECK_RDONLY_FS(target);
+
+        path_t vpath(target);
+        auto target_name = vpath.pop_end();
+        
+        // invalid target name
+        if (target_name.empty())
+        {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+
+        auto parent_inode = filesystem_inode_smi->get_inode_id_by_path(vpath.to_string());
+        auto new_inode_id = filesystem_inode_smi->
+                make_child_dentry_under_parent(parent_inode, target_name);
+        auto new_inode = filesystem_inode_smi->get_inode_by_id(new_inode_id);
+        
+        // fill up info
+        auto cur_time = get_current_time();
+        new_inode->fs_stat.st_mode = S_IFLNK | 0755;
+        new_inode->fs_stat.st_nlink = 1;
+        new_inode->fs_stat.st_atim = cur_time;
+        new_inode->fs_stat.st_ctim = cur_time;
+        new_inode->fs_stat.st_mtim = cur_time;
+        new_inode->fs_stat.st_size = (off_t)strlen(target);
+        new_inode->write(target, strlen(target), 0);
+
+        return 0;
+    }
+    CATCH_TAIL;
+}
+
+int do_rename (const char * path, const char * name)
+{
+    try
+    {
+        CHECK_RDONLY_FS(path);
+        CHECK_RDONLY_FS(name);
+
+        auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
+
+        // get target name/path
+        path_t original(path);
+        auto original_name = original.pop_end();
+        if (original.size() == 0) {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+
+        // get original name/path
+        path_t target(name);
+        auto target_name = target.pop_end();
+        if (target.size() == 0) {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+
+        // first, remove dentry in parent inode
+        auto parent_inode_id = filesystem_inode_smi->get_inode_id_by_path(original.to_string());
+        auto parent_inode = filesystem_inode_smi->get_inode_by_id(parent_inode_id);
+        directory_resolver_t ori_directoryResolver(parent_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
+        ori_directoryResolver.remove_path(original_name);
+
+        // second, create new dentry in new inode parent
+        auto target_parent_inode_id = filesystem_inode_smi->get_inode_id_by_path(target.to_string());
+        auto target_parent_inode = filesystem_inode_smi->get_inode_by_id(target_parent_inode_id);
+        directory_resolver_t tag_directoryResolver(target_parent_inode,
+                                                   FILESYSTEM_CUR_MODIFIABLE_VER);
+        tag_directoryResolver.add_path(target_name, inode_id);
+
+        return 0;
+
+    }
+    CATCH_TAIL;
+}
+
+int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct fuse_file_info *)
+{
+    try
+    {
+        CHECK_RDONLY_FS(path);
+
+
+        auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
+        auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
+
+        // fill up info
+        auto cur_time = get_current_time();
+        inode->fs_stat.st_mode = mode | S_IFREG;
+        inode->fs_stat.st_nlink = 1;
+        inode->fs_stat.st_ctim = cur_time;
+        inode->fs_stat.st_size = offset + length;
+
+        // resize
+        inode->write(nullptr, length, offset, true, true);
+
+        return 0;
+    }
+    CATCH_TAIL;
+}
+
+int do_fgetattr (const char * path, struct stat * statbuf, struct fuse_file_info *)
+{
+    return do_getattr(path, statbuf);
+}
+
+int do_ftruncate (const char * path, off_t length, struct fuse_file_info *)
+{
+    return do_truncate(path, length);
+}
+
+int do_readlink (const char * path, char * buffer, size_t size)
+{
+    try
+    {
+        std::string parsed_path;
+        snapshot_ver_t version = if_snapshot(path, parsed_path);
+        auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
+        auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
+        inode->read(version, buffer, size, 0);
+
+        return 0;
+    }
+    CATCH_TAIL;
+}
+
+void do_destroy (void *)
+{
+    __asm__("nop");
+}
+
+void* do_init (struct fuse_conn_info *conn)
+{
+    return nullptr;
+}
+
+int do_access (const char * path, int mode)
+{
+    // TODO: namei
+    auto namei = [&](const std::string & pathname)->inode_id_t
+    {
+
+    };
+
+    auto inode_id = namei(path);
+    auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
+    auto target_mode = inode->fs_stat.st_mode;
+
+    // perform access check
+
+    // instance 1: target is file and exists
+    //      if we can make this far the target exists
+    if ((mode == F_OK) && (target_mode & S_IFREG))
+    {
+        return 0;
+    }
+
+    // instance 2: all requested permission requested
+}
+
+int do_mknod (const char * path, mode_t mode, dev_t device)
+{
+    try
+    {
+        CHECK_RDONLY_FS(path);
+
+        path_t vpath(path);
+        auto target_name = vpath.pop_end();
+        if (target_name.empty()) {
+            THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+        
+        auto inode_id = filesystem_inode_smi->get_inode_id_by_path(vpath.to_string());
+        auto new_inode_id = filesystem_inode_smi->
+                make_child_dentry_under_parent(inode_id, target_name);
+        auto new_inode = filesystem_inode_smi->get_inode_by_id(new_inode_id);
+
+        // fill up info
+        auto cur_time = get_current_time();
+        new_inode->fs_stat.st_mode  = mode;
+        new_inode->fs_stat.st_nlink = 1;
+        new_inode->fs_stat.st_atim  = cur_time;
+        new_inode->fs_stat.st_ctim  = cur_time;
+        new_inode->fs_stat.st_mtim  = cur_time;
+        new_inode->fs_stat.st_dev   = device;
+
+        return 0;
+    }
+    CATCH_TAIL;
+}
+
+
+
+
