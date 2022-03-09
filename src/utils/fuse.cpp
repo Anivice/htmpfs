@@ -230,6 +230,11 @@ int do_release (const char * path, struct fuse_file_info *)
     return 0;
 }
 
+int do_access   (const char * path, int)
+{
+    return do_open (path, nullptr);
+}
+
 int do_open (const char * path, struct fuse_file_info * info)
 {
     try
@@ -513,7 +518,7 @@ int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct
         inode->fs_stat.st_size = offset + length;
 
         // resize
-        inode->write(nullptr, length, offset, true);
+        inode->truncate(offset + length);
 
         return 0;
     }
@@ -556,28 +561,19 @@ void* do_init (struct fuse_conn_info *conn)
     return nullptr;
 }
 
-int do_access (const char * path, int mode)
+/// dereference inode
+/// @param root_inode root inode id
+/// @param version snapshot volume version
+/// @return next pathname
+inline std::string dereference_inode(inode_id_t root_inode,
+                         const snapshot_ver_t& version)
 {
-    // TODO: namei
-    auto namei = [&](const std::string & pathname)->inode_id_t
-    {
-
-    };
-
-    auto inode_id = namei(path);
-    auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
-    auto target_mode = inode->fs_stat.st_mode;
-
-    // perform access check
-
-    // instance 1: target is file and exists
-    //      if we can make this far the target exists
-    if ((mode == F_OK) && (target_mode & S_IFREG))
-    {
-        return 0;
+    try {
+        auto inode = filesystem_inode_smi->get_inode_by_id(root_inode);
+        inode->to_string(version);
+    } catch (...) {
+        throw;
     }
-
-    // instance 2: all requested permission requested
 }
 
 int do_mknod (const char * path, mode_t mode, dev_t device)

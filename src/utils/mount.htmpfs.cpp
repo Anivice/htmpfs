@@ -37,10 +37,10 @@ static struct fuse_operations fuse_ops =
                 .destroy    = do_destroy,
 //                .access     = do_access,
                 .create     = do_create,
-//                .ftruncate  = do_ftruncate,
+                .ftruncate  = do_ftruncate,
                 .fgetattr   = do_fgetattr,
                 .utimens    = do_utimens,
-//                .fallocate  = do_fallocate,
+                .fallocate  = do_fallocate,
         };
 
 static void usage(const char *progname)

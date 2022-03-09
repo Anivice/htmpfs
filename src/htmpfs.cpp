@@ -46,119 +46,6 @@ htmpfs_size_t inode_t::write(const char *buffer,
     if (resize)
     {
         truncate(offset + length);
-//        // check buffer bank availability
-//        htmpfs_size_t current_bank_size = snapshot_0_block_list.size() * block_size;
-//        htmpfs_size_t length_after_write = offset + length;
-//
-//        // meet bank size shortage, i.e., grow bank at the end of the buffer list
-//        if (current_bank_size < length_after_write)
-//        {
-//            // first, calculate how much additional buffer is required
-//            htmpfs_size_t wanted_size = length_after_write - current_bank_size;
-//            htmpfs_size_t wanted_buffer_count = wanted_size / block_size + (wanted_size % block_size != 0);
-//
-//            // append these additional buffer
-//            for (htmpfs_size_t i = 0; i < wanted_buffer_count; i++)
-//            {
-//                // emplace lost buffer
-//                auto result = filesystem->request_buffer_allocation();
-////                auto result = buffer_result_t { .id = 0x00, .buffer = new buffer_t };
-//                snapshot_0_block_list.emplace_back(result);
-//            }
-//
-//            // second, check how many buffer (since offset) need to be reallocated
-//            // because of snapshot
-//            // before we do that, let's see how much existing buffer needs to be modified
-//            htmpfs_size_t existing_buffer_pending_for_modification_start = offset / block_size;
-//            // end - modification-starting-buffer
-//            htmpfs_size_t existing_buffer_pending_for_modification_count =
-//                    snapshot_0_block_list.size() - existing_buffer_pending_for_modification_start;
-//
-//            // check all buffers pending for modification
-//            // reallocate buffer when detecting snapshot-frozen buffers
-//            for (uint64_t i = 0;
-//                i < existing_buffer_pending_for_modification_count;
-//                i++)
-//            {
-//                // if frozen buffer detected
-//                if ((buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)
-//                    [i + existing_buffer_pending_for_modification_start])._is_snapshoted)
-//                {
-//                    // read data from old buffer
-//                    char * tmp = new char [block_size];
-//                    auto frozen_buffer =
-//                            &buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)
-//                            [i + existing_buffer_pending_for_modification_start];
-//                    uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
-//
-//                    // allocate new buffer
-//                    auto new_buffer = filesystem->request_buffer_allocation();
-//                    new_buffer.data->write(tmp, len, 0);
-//
-//                    // replace buffer
-//                    buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)
-//                        [i + existing_buffer_pending_for_modification_start] = new_buffer;
-//
-//                    delete []tmp;
-//                }
-//            }
-//
-//        }
-//        else // buffer bank is larger than wanted size
-//        {
-//            // first, see how much buffer is pending for deletion
-//            htmpfs_size_t current_bank_count = snapshot_0_block_list.size();
-//            htmpfs_size_t bank_count_after_write =
-//                    length_after_write / block_size + (length_after_write % block_size != 0);
-//            htmpfs_size_t lost_buffer_count = current_bank_count - bank_count_after_write;
-//
-//            // check frozen buffer in lost buffer list
-//            for (htmpfs_size_t i = 0; i < lost_buffer_count; i++)
-//            {
-//                auto last_buffer = *(--(snapshot_0_block_list.end()));
-//
-//                // if not a snapshot frozen buffer (now becomes a owner-less buffer)
-//                if (!last_buffer._is_snapshoted)
-//                {
-//                    // delete lost buffer
-//                    filesystem->unlink_buffer(last_buffer.id);
-//                }
-//
-//                // remove buffer in the buffer list
-//                snapshot_0_block_list.pop_back();
-//            }
-//
-//            // second, check the buffer pending for modification
-//            htmpfs_size_t existing_buffer_pending_for_modification_start = offset / block_size;
-//            // end - modification-starting-buffer
-//            htmpfs_size_t existing_buffer_pending_for_modification_end
-//                = (offset + length) / block_size + (((offset + length) % block_size) != 0);
-//
-//            // check all buffers pending for modification
-//            // reallocate buffer when detecting snapshot-frozen buffers
-//            for (uint64_t i = existing_buffer_pending_for_modification_start;
-//                 i < existing_buffer_pending_for_modification_end;
-//                 i++)
-//            {
-//                // if frozen buffer detected
-//                if ((buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i])._is_snapshoted)
-//                {
-//                    // read data from old buffer
-//                    char * tmp = new char [block_size];
-//                    auto frozen_buffer = &buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i];
-//                    uint64_t len = frozen_buffer->data->read(tmp, block_size, 0);
-//
-//                    // allocate new buffer
-//                    auto new_buffer = filesystem->request_buffer_allocation();
-//                    new_buffer.data->write(tmp, len, 0);
-//
-//                    // replace buffer
-//                    buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER)[i] = new_buffer;
-//
-//                    delete []tmp;
-//                }
-//            }
-//        }
 
         htmpfs_size_t offset_for_starting_buffer = offset % block_size;
         buffer_id_t starting_buffer = 0;
@@ -1204,7 +1091,7 @@ htmpfs_size_t inode_smi_t::count_link_for_inode(inode_id_t inode_id)
     auto it = inode_pool.find(inode_id);
     if (it == inode_pool.end())
     {
-        THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_INODE_NOT_FOUND);
     }
 
     return it->second.link_count;
