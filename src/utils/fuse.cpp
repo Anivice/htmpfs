@@ -164,6 +164,7 @@ int do_chmod (const char * path, mode_t mode)
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
         inode->fs_stat.st_mode = mode;
+        inode->fs_stat.st_ctim = get_current_time();
 
         return 0;
     }
@@ -180,6 +181,7 @@ int do_chown (const char * path, uid_t uid, gid_t gid)
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
         inode->fs_stat.st_uid = uid;
         inode->fs_stat.st_gid = gid;
+        inode->fs_stat.st_ctim = get_current_time();
 
         return 0;
     }
@@ -228,7 +230,7 @@ int do_release (const char * path, struct fuse_file_info *)
     return 0;
 }
 
-int do_open (const char * path, struct fuse_file_info *)
+int do_open (const char * path, struct fuse_file_info * info)
 {
     try
     {
@@ -252,13 +254,14 @@ int do_read (const char *path, char *buffer, size_t size, off_t offset,
         snapshot_ver_t version = if_snapshot(path, parsed_path);
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
+        inode->fs_stat.st_atim = get_current_time();
         return (int)inode->read(version, buffer, size, offset);
     }
     CATCH_TAIL;
 }
 
 int do_write (const char * path, const char * buffer, size_t size, off_t offset,
-              struct fuse_file_info *)
+              struct fuse_file_info * info)
 {
     try
     {
@@ -266,7 +269,15 @@ int do_write (const char * path, const char * buffer, size_t size, off_t offset,
 
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
-        return (int)inode->write(buffer, size, offset);
+        auto current_data_sz = inode->current_data_size(FILESYSTEM_CUR_MODIFIABLE_VER);
+        inode->fs_stat.st_mtim = get_current_time();
+        bool if_resize = false;
+        if ((offset + size) > current_data_sz)
+        {
+            if_resize = true;
+        }
+
+        return (int)inode->write(buffer, size, offset, if_resize);
     }
     CATCH_TAIL;
 }
@@ -358,8 +369,7 @@ int do_truncate (const char * path, off_t size)
 
         inode_id_t new_inode_id;
 
-        try
-        {
+        try {
             __disable_output = true;
             new_inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         }
@@ -397,7 +407,7 @@ int do_truncate (const char * path, off_t size)
         new_inode->fs_stat.st_mtim = cur_time;
 
         // resize inode buffer
-        new_inode->write(nullptr, size, 0, true, true);
+        new_inode->write(nullptr, size, 0, true);
 
         return 0;
     }
@@ -491,7 +501,6 @@ int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct
     {
         CHECK_RDONLY_FS(path);
 
-
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
 
@@ -503,7 +512,7 @@ int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct
         inode->fs_stat.st_size = offset + length;
 
         // resize
-        inode->write(nullptr, length, offset, true, true);
+        inode->write(nullptr, length, offset, true);
 
         return 0;
     }
@@ -542,7 +551,8 @@ void do_destroy (void *)
 
 void* do_init (struct fuse_conn_info *conn)
 {
-    return nullptr;
+    conn->capable = 0;
+    return conn;
 }
 
 int do_access (const char * path, int mode)

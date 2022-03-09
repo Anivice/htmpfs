@@ -51,6 +51,9 @@ public:
 
     /// return size of current buffer bank
     [[nodiscard]] htmpfs_size_t size() const { return data.size(); }
+
+    /// change size of current buffer
+    void truncate(htmpfs_size_t length);
 };
 
 #endif //HTMPFS_BUFFER_T_H

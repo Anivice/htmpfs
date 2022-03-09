@@ -72,7 +72,6 @@ public:
                         htmpfs_size_t length,
                         htmpfs_size_t offset,
                         bool resize = true,
-                        bool bare_allocate = false,
                         directory_resolver_t::__dentry_only dentry_only =
                                 directory_resolver_t::__dentry_only(false));
 
@@ -101,6 +100,9 @@ public:
     void delete_volume(const snapshot_ver_t& volume_version);
 
     htmpfs_size_t block_count(const snapshot_ver_t& version);
+
+    /// change size of current inode buffer
+    void truncate(htmpfs_size_t size);
 
     friend class inode_smi_t;
 };

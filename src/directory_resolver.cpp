@@ -140,7 +140,7 @@ void directory_resolver_t::save_current()
     }
 
     associated_inode->write(ret.c_str(), ret.length(), 0,
-                            true, false, __dentry_only(true));
+                            true, __dentry_only(true));
 }
 
 bool directory_resolver_t::check_availability(const std::string &pathname)

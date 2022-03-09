@@ -176,5 +176,31 @@ int main()
         }
     }
 
+    {
+        /// instance 12: buffer shortage, resize disabled
+
+        INSTANCE("BUFFER: instance 12: buffer shortage, resize disabled");
+        const char * hello_world = "Hello, world!";
+        buffer_t buffer(hello_world, strlen(hello_world));
+        VERIFY_DATA_OPS_LEN(buffer.write("123", 3, 0, false), 3);
+        if (buffer.to_string() != "123lo, world!")
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+    {
+        /// instance 13: resize manually
+
+        INSTANCE("BUFFER: instance 13: resize manually");
+        const char * hello_world = "Hello, world!";
+        buffer_t buffer(hello_world, strlen(hello_world));
+        buffer.truncate(3);
+        if (buffer.to_string() != "Hel")
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     return EXIT_SUCCESS;
 }

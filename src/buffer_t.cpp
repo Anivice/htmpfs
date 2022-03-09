@@ -93,3 +93,23 @@ uint64_t buffer_t::hash64()
 {
     return std::hash <std::string>{}(to_string());
 }
+
+void buffer_t::truncate(htmpfs_size_t length)
+{
+    if (length > data.size())
+    {
+        htmpfs_size_t append_count = length - data.size();
+        for (htmpfs_size_t i = 0; i < append_count; i++)
+        {
+            data.emplace_back(0);
+        }
+    }
+    else if (length < data.size())
+    {
+        htmpfs_size_t delete_count = data.size() - length;
+        for (htmpfs_size_t i = 0; i < delete_count; i++)
+        {
+            data.pop_back();
+        }
+    }
+}
