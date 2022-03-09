@@ -184,7 +184,7 @@ int main(int argc, char ** argv)
         /// instance 16: resize manually, large bank size
 
         inode_smi_t _filesystem(32 * 1024);
-        INSTANCE("INODE: 16: resize manually, large bank size");
+        INSTANCE("INODE: instance 16: resize manually, large bank size");
         inode_t inode(32 * 1024, 0, &_filesystem, false);
 
         inode.write("123456789", 9, 0);
@@ -192,6 +192,24 @@ int main(int argc, char ** argv)
         VERIFY_DATA(inode, "123");
         inode.truncate(6);
         if (!!memcmp(inode.to_string(FILESYSTEM_CUR_MODIFIABLE_VER).c_str(), "123\0\0\0", 6))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+    {
+        /// instance 17: resize to 0, append data
+
+        inode_smi_t _filesystem(32 * 1024);
+        INSTANCE("INODE: instance 17: resize to 0, append data");
+        inode_t inode(32 * 1024, 0, &_filesystem, false);
+
+        inode.write("123456789", 9, 0);
+        inode.truncate(0);
+        inode.write("456", 3, 0);
+        VERIFY_DATA(inode, "456");
+        inode.truncate(6);
+        if (!!memcmp(inode.to_string(FILESYSTEM_CUR_MODIFIABLE_VER).c_str(), "456\0\0\0", 6))
         {
             return EXIT_FAILURE;
         }

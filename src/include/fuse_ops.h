@@ -48,10 +48,10 @@ int do_releasedir (const char *path, struct fuse_file_info *);
 int do_fsyncdir (const char * path, int, struct fuse_file_info *);
 int do_create   (const char * path, mode_t mode, struct fuse_file_info * fi);
 int do_utimens  (const char * path, const struct timespec tv[2]);
-int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct fuse_file_info * fi);
+//int do_fallocate(const char * path, int mode, off_t offset, off_t length, struct fuse_file_info * fi);
 int do_access   (const char *, int);
 int do_fgetattr (const char *, struct stat *, struct fuse_file_info *);
-int do_ftruncate (const char *, off_t, struct fuse_file_info *);
+//int do_ftruncate (const char *, off_t, struct fuse_file_info *);
 void do_destroy (void *);
 void* do_init    (struct fuse_conn_info *conn);
 

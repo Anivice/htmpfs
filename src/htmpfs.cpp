@@ -707,6 +707,12 @@ void inode_t::truncate(htmpfs_size_t length)
     // write_length_in_last_buffer
     write_length_in_last_buffer = remaining_write_length % block_size;
 
+    // no data pending for modification, skip
+    if (length == 0)
+    {
+        return;
+    }
+
     // =================================================================== //
     // resize block
     snapshot_0_block_list.at(starting_buffer).data->truncate(write_length_in_starting_buffer

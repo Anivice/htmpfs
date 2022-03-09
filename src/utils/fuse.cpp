@@ -367,11 +367,13 @@ int do_truncate (const char * path, off_t size)
     {
         CHECK_RDONLY_FS(path);
 
-        inode_id_t new_inode_id;
+        inode_t * inode;
 
+        // create new inode if not exist
         try {
             __disable_output = true;
-            new_inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
+            inode = filesystem_inode_smi->get_inode_by_id(
+                    filesystem_inode_smi->get_inode_id_by_path(path));
         }
         catch (HTMPFS_error_t & error)
         {
@@ -389,25 +391,24 @@ int do_truncate (const char * path, off_t size)
                 }
 
                 auto inode_id = filesystem_inode_smi->get_inode_id_by_path(vpath.to_string());
-                new_inode_id = filesystem_inode_smi->make_child_dentry_under_parent(inode_id,
-                                                                                          target_name);
+                auto new_inode_id = filesystem_inode_smi->
+                        make_child_dentry_under_parent(inode_id, target_name);
+                inode = filesystem_inode_smi->get_inode_by_id(new_inode_id);
+
+                // fill up info
+                auto cur_time = get_current_time();
+                inode->fs_stat.st_size = size;
+                inode->fs_stat.st_nlink = 1;
+                inode->fs_stat.st_atim = cur_time;
+                inode->fs_stat.st_ctim = cur_time;
+                inode->fs_stat.st_mtim = cur_time;
             }
         }
 
         __disable_output = false;
 
-        auto new_inode = filesystem_inode_smi->get_inode_by_id(new_inode_id);
-
-        // fill up info
-        auto cur_time = get_current_time();
-        new_inode->fs_stat.st_size = size;
-        new_inode->fs_stat.st_nlink = 1;
-        new_inode->fs_stat.st_atim = cur_time;
-        new_inode->fs_stat.st_ctim = cur_time;
-        new_inode->fs_stat.st_mtim = cur_time;
-
         // resize inode buffer
-        new_inode->write(nullptr, size, 0, true);
+        inode->truncate(size);
 
         return 0;
     }
@@ -551,8 +552,8 @@ void do_destroy (void *)
 
 void* do_init (struct fuse_conn_info *conn)
 {
-    conn->capable = 0;
-    return conn;
+    conn->capable |= FUSE_CAP_ATOMIC_O_TRUNC;
+    return nullptr;
 }
 
 int do_access (const char * path, int mode)

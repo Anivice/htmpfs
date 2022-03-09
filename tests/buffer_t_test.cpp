@@ -202,5 +202,19 @@ int main()
         }
     }
 
+    {
+        /// instance 14: resize manually
+
+        INSTANCE("BUFFER: instance 14: resize to 0 manually");
+        const char * hello_world = "Hello, world!";
+        buffer_t buffer(hello_world, strlen(hello_world));
+        buffer.truncate(0);
+        buffer.write("123", 3, 0);
+        if (buffer.to_string() != "123")
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     return EXIT_SUCCESS;
 }
