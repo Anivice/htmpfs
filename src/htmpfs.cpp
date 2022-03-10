@@ -42,27 +42,16 @@ htmpfs_size_t inode_t::write(const char *buffer,
 
     auto &snapshot_0_block_list = buffer_map.at(FILESYSTEM_CUR_MODIFIABLE_VER);
 
+    htmpfs_size_t offset_for_starting_buffer = offset % block_size;
+    buffer_id_t starting_buffer = offset / block_size;
+    htmpfs_size_t write_length_in_starting_buffer = 0;
+    htmpfs_size_t write_length_in_last_buffer = 0;
+    htmpfs_size_t full_block_operation_count = 0;
+
     // if resizing buffer
     if (resize)
     {
         truncate(offset + length);
-
-        htmpfs_size_t offset_for_starting_buffer = offset % block_size;
-        buffer_id_t starting_buffer = 0;
-        htmpfs_size_t write_length_in_starting_buffer = 0;
-        htmpfs_size_t write_length_in_last_buffer = 0;
-        htmpfs_size_t full_block_operation_count = 0;
-
-        // if offset == 0; then starting_buffer == 0;
-        // if offset != 0, but offset < block_size, then starting_buffer = 0
-        if ((!offset) or (offset < block_size)) { }
-        // offset == block_size starting_buffer == 1
-        else if (offset == block_size) { starting_buffer = 1; }
-        // if offset > block_size, then starting_buffer = offset / block_size
-        else if (offset > block_size)
-        {
-            starting_buffer = offset / block_size;
-        }
 
         /*
          *     A       B       C       D       E       F
@@ -170,23 +159,6 @@ htmpfs_size_t inode_t::write(const char *buffer,
 
         // =================================================================== //
 
-        htmpfs_size_t offset_for_starting_buffer = offset % block_size;
-        buffer_id_t starting_buffer = 0;
-        htmpfs_size_t write_length_in_starting_buffer = 0;
-        htmpfs_size_t write_length_in_last_buffer = 0;
-        htmpfs_size_t full_block_operation_count = 0;
-
-        // if offset == 0; then starting_buffer == 0;
-        // if offset != 0, but offset < block_size, then starting_buffer = 0
-        if ((!offset) or (offset < block_size)) { }
-        // offset == block_size starting_buffer == 1
-        else if (offset == block_size) { starting_buffer = 1; }
-        // if offset > block_size, then starting_buffer = offset / block_size
-        else if (offset > block_size)
-        {
-            starting_buffer = offset / block_size;
-        }
-
         // write_length_in_starting_buffer
         if ((block_size - offset_for_starting_buffer) /* remaining space in starting buffer */
             >= write_size) // all write operation is in starting buffer
@@ -271,21 +243,10 @@ htmpfs_size_t inode_t::read(const snapshot_ver_t& version,
     // =================================================================== //
 
     htmpfs_size_t offset_for_starting_buffer = offset % block_size;
-    buffer_id_t starting_buffer = 0;
+    buffer_id_t starting_buffer = offset / block_size;
     htmpfs_size_t read_length_in_starting_buffer = 0;
     htmpfs_size_t read_length_in_last_buffer = 0;
     htmpfs_size_t full_block_operation_count = 0;
-
-    // if offset == 0; then starting_buffer == 0;
-    // if offset != 0, but offset < block_size, then starting_buffer = 0
-    if ((!offset) or (offset < block_size)) { }
-    // offset == block_size starting_buffer == 1
-    else if (offset == block_size) { starting_buffer = 1; }
-    // if offset > block_size, then starting_buffer = offset / block_size
-    else if (offset > block_size)
-    {
-        starting_buffer = offset / block_size;
-    }
 
     // read_length_in_starting_buffer
     if ((block_size - offset_for_starting_buffer) /* remaining space in starting buffer */
@@ -293,7 +254,7 @@ htmpfs_size_t inode_t::read(const snapshot_ver_t& version,
     {
         read_length_in_starting_buffer = read_size;
     }
-    else // read length is beyond starting buffer
+    else // read length is beyond starting buf0fer
     {
         read_length_in_starting_buffer = block_size - offset_for_starting_buffer;
     }

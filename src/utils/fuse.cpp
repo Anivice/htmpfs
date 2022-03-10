@@ -400,14 +400,17 @@ int do_truncate (const char * path, off_t size)
 
         // create new inode if not exist
         try {
+#ifdef CMAKE_BUILD_DEBUG
             __disable_output = true;
+#endif // CMAKE_BUILD_DEBUG
             inode = filesystem_inode_smi->get_inode_by_id(
                     filesystem_inode_smi->get_inode_id_by_path(path));
         }
         catch (HTMPFS_error_t & error)
         {
+#ifdef CMAKE_BUILD_DEBUG
             __disable_output = false;
-
+#endif // CMAKE_BUILD_DEBUG
             // if inode doesn't exist
             if (error.my_errcode() == HTMPFS_NO_SUCH_FILE_OR_DIR)
             {
@@ -433,9 +436,9 @@ int do_truncate (const char * path, off_t size)
                 inode->fs_stat.st_mtim = cur_time;
             }
         }
-
+#ifdef CMAKE_BUILD_DEBUG
         __disable_output = false;
-
+#endif // CMAKE_BUILD_DEBUG
         // resize inode buffer
         inode->truncate(size);
 
