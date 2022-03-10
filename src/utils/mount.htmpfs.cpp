@@ -7,7 +7,7 @@
 #include <fuse.h>
 #include <iostream>
 #include <fuse_ops.h>
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 #include <unistd.h>
 
 static struct fuse_operations fuse_ops =

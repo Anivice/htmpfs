@@ -1,7 +1,7 @@
-#include <directory_resolver.h>
+#include <htmpfs/directory_resolver.h>
 #include <string>
 #include <iostream>
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 
 /** @file
  *

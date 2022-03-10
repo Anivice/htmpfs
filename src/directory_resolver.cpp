@@ -1,6 +1,6 @@
-#include <directory_resolver.h>
+#include <htmpfs/directory_resolver.h>
 #include <htmpfs_error.h>
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 #include <debug.h>
 #include <functional>
 #include <algorithm>

@@ -39,6 +39,8 @@ _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_DENTRY_NAME,     0xA0000013,     "Invalid
 _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_WRITE_INVOKE,    0xA0000014,     "Invalid write invoke",         1)
 _ADD_ERROR_INFORMATION_(HTMPFS_INVALID_READ_INVOKE,     0xA0000015,     "Invalid read invoke",          1)
 _ADD_ERROR_INFORMATION_(HTMPFS_CANNOT_REMOVE_ROOT,      0xA0000016,     "Cannot remove root inode",     EISDIR)
+_ADD_ERROR_INFORMATION_(HTMPFS_CANNOT_OPEN_DEVICE,      0xA0000017,     "Cannot open device",           1)
+_ADD_ERROR_INFORMATION_(HTMPFS_CANNOT_LSEEK_DEVICE,     0xA0000018,     "Cannot lseek device",          1)
 
 /// Filesystem Error Type
 class HTMPFS_error_t : public std::exception

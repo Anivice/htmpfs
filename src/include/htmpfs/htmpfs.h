@@ -8,13 +8,13 @@
 #include <debug.h>
 #include <htmpfs_error.h>
 #include <cstdint>
-#include <buffer_t.h>
+#include <htmpfs/buffer_t.h>
 #include <uni_utils.h>
 #include <map>
 #include <string>
-#include <path_t.h>
-#include <directory_resolver.h>
-#include <htmpfs_types.h>
+#include <htmpfs/path_t.h>
+#include <htmpfs/directory_resolver.h>
+#include <htmpfs/htmpfs_types.h>
 
 /*
  * Index node

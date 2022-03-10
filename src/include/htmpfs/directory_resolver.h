@@ -7,8 +7,8 @@
 
 #include <string>
 #include <vector>
-#include <buffer_t.h>
-#include <htmpfs_types.h>
+#include <htmpfs/buffer_t.h>
+#include <htmpfs/htmpfs_types.h>
 
 class inode_t;
 

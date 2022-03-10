@@ -5,13 +5,13 @@
 #include <fuse.h>
 #include <fuse_ops.h>
 #include <sys/types.h>
-#include <path_t.h>
-#include <htmpfs.h>
+#include <htmpfs/path_t.h>
+#include <htmpfs/htmpfs.h>
 #include <htmpfs_error.h>
 #include <iostream>
 #include <execinfo.h>
 #include <sys/xattr.h>
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 
 // A generic smart pointer class
 template < class Type >

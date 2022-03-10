@@ -1,12 +1,11 @@
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 #include <iostream>
 #include <string>
 #include <random>
 #include <map>
 #include <cmath>
-#include <sys/param.h>
 #include <cstring>
-#include <buffer_t.h>
+#include <htmpfs/buffer_t.h>
 #include <sstream>
 #include <algorithm>
 #include <iterator>

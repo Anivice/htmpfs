@@ -38,16 +38,19 @@ default_definition(${MARCO_PREFIX}_PREFIX "\"(${PROJECT_NAME}) \"")
 # STEMPFS Static Library
 add_library(${PROJECT_NAME}
         # directory resolver
-        src/directory_resolver.cpp src/include/directory_resolver.h
+        src/directory_resolver.cpp src/include/htmpfs/directory_resolver.h
 
         # uni htmpfs
-        src/include/htmpfs.h src/htmpfs.cpp
+        src/include/htmpfs/htmpfs.h src/htmpfs.cpp
 
         # buffer
-        src/buffer_t.cpp src/include/buffer_t.h
+        src/buffer_t.cpp src/include/htmpfs/buffer_t.h
 
         # pathname resolver
-        src/path_t.cpp src/include/path_t.h
+        src/path_t.cpp src/include/htmpfs/path_t.h
+
+        # low-level I/O
+        src/disk_ops/ll_io.cpp src/include/ll_io/ll_io.h
 
         # Debug:
         src/debug/debug.cpp src/include/debug.h src/debug/error.cpp
@@ -89,4 +92,5 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     _add_test(filesystem
             "Test for filesystem functionality")
     _add_test(sig_inode_snapshot "Test for single inode snapshot I/O")
+    _add_test(ll_io             "Test for direct I/O support")
 endif()

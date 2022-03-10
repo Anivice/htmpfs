@@ -1,7 +1,7 @@
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 #include <algorithm>
 #include <htmpfs_error.h>
-#include <directory_resolver.h>
+#include <htmpfs/directory_resolver.h>
 #include <sstream>
 
 #define VERIFY_DATA_OPS_LEN(operation, len) \

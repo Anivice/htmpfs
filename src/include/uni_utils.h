@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctime>
-#include <htmpfs_types.h>
+#include <htmpfs/htmpfs_types.h>
 #include <string>
 
 /// get current time

@@ -1,6 +1,6 @@
 #include <debug.h>
 #include <iostream>
-#include <htmpfs.h>
+#include <htmpfs/htmpfs.h>
 #include <string>
 
 /** @file
