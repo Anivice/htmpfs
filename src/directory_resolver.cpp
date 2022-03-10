@@ -98,8 +98,8 @@ void directory_resolver_t::add_path(const std::string & pathname, uint64_t inode
 {
     for (const auto& i : path)
     {
-        if (!memcmp(i.pathname.c_str(), pathname.c_str(),
-                    MIN(pathname.length(), i.pathname.length())))
+        if ( pathname.length() == i.pathname.length() &&
+            !memcmp(i.pathname.c_str(), pathname.c_str(),  pathname.length()) )
         {
             THROW_HTMPFS_ERROR_STDERR(HTMPFS_DOUBLE_MKPATHNAME);
         }
@@ -113,8 +113,7 @@ uint64_t directory_resolver_t::namei(const std::string & pathname)
     for (const auto& i : path)
     {
         if (    (pathname.length() == i.pathname.length())
-            && (!memcmp(i.pathname.c_str(), pathname.c_str(),
-                    MIN(i.pathname.length(), pathname.length())))
+            && (!memcmp(i.pathname.c_str(), pathname.c_str(),pathname.length()))
                     )
         {
             return i.inode_id;
@@ -149,8 +148,9 @@ bool directory_resolver_t::check_availability(const std::string &pathname)
 {
     return !std::ranges::any_of(path.cbegin(), path.cend(), [&](const path_pack_t & i)->bool
                         {
-                            return !memcmp(i.pathname.c_str(), pathname.c_str(),
-                                            MIN(i.pathname.length(), pathname.length()));
+                            return ( i.pathname.length() == pathname.length() &&
+                                    !memcmp(i.pathname.c_str(), pathname.c_str(),pathname.length())
+                            );
                         });
 }
 
@@ -158,8 +158,9 @@ void directory_resolver_t::remove_path(const std::string &pathname)
 {
     for (auto i = path.begin(); i != path.end(); i++)
     {
-        if (!memcmp(i->pathname.c_str(), pathname.c_str(),
-                    MIN(i->pathname.length(), pathname.length())))
+        if ( i->pathname.length() == pathname.length() &&
+            !memcmp(i->pathname.c_str(), pathname.c_str(),pathname.length())
+            )
         {
             path.erase(i);
             return;

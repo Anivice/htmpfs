@@ -45,11 +45,12 @@ std::string gen_random_name(uint64_t length)
 bool can_find(const std::vector < std::string > & list, const std::string & val)
 {
     return std::ranges::any_of(list.cbegin(), list.cend(),
-                        [&](const std::string & i)
-                            {
-                                return !memcmp(i.c_str(), val.c_str(), MIN(i.length(), val.length()));
-                            }
-                        );
+                               [&](const std::string & i)->bool
+                               {
+                                   return (i.length() == val.length()) &&
+                                          !memcmp(i.c_str(), val.c_str(),val.length());
+                               }
+    );
 }
 
 int main()
@@ -316,7 +317,9 @@ int main()
         {
             inode_id_t inode = filesystem.get_inode_id_by_path(i.first);
             auto _data = filesystem.get_inode_by_id(inode)->to_string(FILESYSTEM_CUR_MODIFIABLE_VER);
-            if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
+            if (_data.length() != i.second.length() ||
+                    !!memcmp(i.second.c_str(), _data.c_str(), _data.length())
+                    )
             {
                 return EXIT_FAILURE;
             }

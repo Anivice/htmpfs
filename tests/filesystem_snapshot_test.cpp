@@ -48,8 +48,8 @@ bool can_find(const std::vector < std::string > & list, const std::string & val)
     return std::ranges::any_of(list.cbegin(), list.cend(),
             [&](const std::string & i)->bool
                     {
-                        return !memcmp(i.c_str(), val.c_str(),
-                                       MIN(i.length(), val.length()));
+                        return (i.length() == val.length()) &&
+                            !memcmp(i.c_str(), val.c_str(),val.length());
                     }
             );
 }
@@ -307,7 +307,9 @@ int main()
         {
             inode_id_t inode = filesystem.get_inode_id_by_path(make_path_with_version(i.first, "1"));
             auto _data = filesystem.get_inode_by_id(inode)->to_string("1");
-            if (!!memcmp(i.second.c_str(), _data.c_str(), MIN(i.second.length(), _data.length())))
+            if (    i.second.length() != _data.length() ||
+                    !!memcmp(i.second.c_str(), _data.c_str(), _data.length())
+                    )
             {
                 return EXIT_FAILURE;
             }

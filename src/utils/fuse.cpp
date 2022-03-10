@@ -123,10 +123,9 @@ int do_mkdir (const char * path, mode_t mode)
 
         // now, determine if creating snapshot volume or normal directory
         if (vpath.size() == 2 /* {"", ".snapshot"} */ &&
+            vpath.last()->length() == strlen(SNAPSHOT_ENTRY) &&
             !memcmp(vpath.last()->c_str(),
-                    SNAPSHOT_ENTRY,
-                    MIN(strlen(SNAPSHOT_ENTRY), vpath.last()->length())
-                    )
+                    SNAPSHOT_ENTRY,vpath.last()->length())
                 )
         {
             // it's a snapshot creation
@@ -357,10 +356,9 @@ int do_rmdir (const char * path)
 
         // now, determine if creating snapshot volume or normal directory
         if (vpath.size() == 2 /* {"", ".snapshot"} */ &&
+            vpath.last()->length() == strlen(SNAPSHOT_ENTRY) &&
             !memcmp(vpath.last()->c_str(),
-                    SNAPSHOT_ENTRY,
-                    MIN(strlen(SNAPSHOT_ENTRY), vpath.last()->length())
-            )
+                    SNAPSHOT_ENTRY,vpath.last()->length())
                 )
         {
             // it's a snapshot deletion
