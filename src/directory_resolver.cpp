@@ -112,8 +112,10 @@ uint64_t directory_resolver_t::namei(const std::string & pathname)
 {
     for (const auto& i : path)
     {
-        if (!memcmp(i.pathname.c_str(), pathname.c_str(),
+        if (    (pathname.length() == i.pathname.length())
+            && (!memcmp(i.pathname.c_str(), pathname.c_str(),
                     MIN(i.pathname.length(), pathname.length())))
+                    )
         {
             return i.inode_id;
         }

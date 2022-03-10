@@ -214,6 +214,8 @@ int do_create (const char * path, mode_t mode, struct fuse_file_info *)
         new_inode->fs_stat.st_atim = cur_time;
         new_inode->fs_stat.st_ctim = cur_time;
         new_inode->fs_stat.st_mtim = cur_time;
+        new_inode->fs_stat.st_gid = getgid();
+        new_inode->fs_stat.st_uid = getuid();
 
         return 0;
     }
@@ -230,9 +232,28 @@ int do_release (const char * path, struct fuse_file_info *)
     return 0;
 }
 
-int do_access   (const char * path, int)
+int do_access (const char * path, int mode)
 {
-    return do_open (path, nullptr);
+    try {
+        if (!strcmp("/" SNAPSHOT_ENTRY, path)) // non-existing directory
+        {
+            return 0;
+        }
+
+        auto inode = filesystem_inode_smi->get_inode_by_id(
+                filesystem_inode_smi->get_inode_id_by_path(path));
+
+        if (mode == F_OK)
+        {
+            return 0;
+        }
+
+        mode <<= 6;
+        mode &= 0x01C0;
+
+        return -!(mode & inode->fs_stat.st_mode);
+    }
+    CATCH_TAIL;
 }
 
 int do_open (const char * path, struct fuse_file_info * info)
@@ -327,6 +348,11 @@ int do_rmdir (const char * path)
         if (target_name.empty())
         {
             THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
+        }
+
+        if (target_name == SNAPSHOT_ENTRY)
+        {
+            return -EROFS;
         }
 
         // now, determine if creating snapshot volume or normal directory
@@ -543,7 +569,11 @@ int do_readlink (const char * path, char * buffer, size_t size)
         snapshot_ver_t version = if_snapshot(path, parsed_path);
         auto inode_id = filesystem_inode_smi->get_inode_id_by_path(path);
         auto inode = filesystem_inode_smi->get_inode_by_id(inode_id);
-        inode->read(version, buffer, size, 0);
+        if (inode->fs_stat.st_mode & S_IFLNK) {
+            inode->read(version, buffer, size, 0);
+        } else {
+            return -EINVAL;
+        }
 
         return 0;
     }
