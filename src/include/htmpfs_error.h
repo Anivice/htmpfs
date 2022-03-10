@@ -60,11 +60,13 @@ public:
         : info(std::move(_info))
         {
             error_code = _code;
+#ifdef CMAKE_BUILD_DEBUG
             if (!__disable_output)
             {
                 std::cerr << "HTMPFS Error thrown" << std::endl;
                 _output_error_message();
             }
+#endif // CMAKE_BUILD_DEBUG
 
             fill_out_errno();
         }

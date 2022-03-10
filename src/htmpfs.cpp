@@ -424,15 +424,15 @@ void inode_t::delete_volume(const snapshot_ver_t& volume_version)
     buffer_map.erase(volume_version);
 }
 
-htmpfs_size_t inode_t::block_count(const snapshot_ver_t& version)
-{
-    if (buffer_map.find(version) == buffer_map.end())
-    {
-        THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
-    }
-
-    return buffer_map.at(version).size();
-}
+//htmpfs_size_t inode_t::block_count(const snapshot_ver_t& version)
+//{
+//    if (buffer_map.find(version) == buffer_map.end())
+//    {
+//        THROW_HTMPFS_ERROR_STDERR(HTMPFS_NO_SUCH_SNAPSHOT);
+//    }
+//
+//    return buffer_map.at(version).size();
+//}
 
 void inode_t::truncate(htmpfs_size_t length)
 {
@@ -899,11 +899,15 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
 
     try
     {
+#ifdef CMAKE_BUILD_DEBUG
         __disable_output = true;
+#endif // CMAKE_BUILD_DEBUG
         directory_resolver_t if_target_is_dir(&target_it->second.inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         if (if_target_is_dir.target_count() != 0)
         {
+#ifdef CMAKE_BUILD_DEBUG
             __disable_output = false;
+#endif // CMAKE_BUILD_DEBUG
             THROW_HTMPFS_ERROR_STDERR(HTMPFS_DIR_NOT_EMPTY);
         }
     }
@@ -916,7 +920,9 @@ void inode_smi_t::remove_child_dentry_under_parent(inode_id_t parent_inode_id, c
         }
     }
 
+#ifdef CMAKE_BUILD_DEBUG
     __disable_output = false;
+#endif // CMAKE_BUILD_DEBUG
 
     // remove dentry
     directoryResolver.remove_path(name);
@@ -1016,16 +1022,16 @@ std::vector < std::string > inode_smi_t::export_as_filesystem_map(snapshot_ver_t
     return filesystem_map;
 }
 
-buffer_t *inode_smi_t::get_buffer_by_id(buffer_id_t buffer_id)
-{
-    auto it = buffer_pool.find(buffer_id);
-    if (it == buffer_pool.end())
-    {
-        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
-    }
-
-    return &it->second.buffer;
-}
+//buffer_t *inode_smi_t::get_buffer_by_id(buffer_id_t buffer_id)
+//{
+//    auto it = buffer_pool.find(buffer_id);
+//    if (it == buffer_pool.end())
+//    {
+//        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
+//    }
+//
+//    return &it->second.buffer;
+//}
 
 void inode_smi_t::create_snapshot_volume(const snapshot_ver_t& snapshot_ver)
 {

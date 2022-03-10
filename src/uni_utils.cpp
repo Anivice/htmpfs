@@ -7,7 +7,7 @@ timespec get_current_time()
     return ts;
 }
 
-std::string make_path_with_version(const std::string& path, snapshot_ver_t version)
+std::string make_path_with_version(const std::string& path, const snapshot_ver_t& version)
 {
     if (version == FILESYSTEM_CUR_MODIFIABLE_VER)
     {

@@ -503,21 +503,47 @@ int do_rename (const char * path, const char * name)
             THROW_HTMPFS_ERROR_STDERR(HTMPFS_INVALID_DENTRY_NAME);
         }
 
-        // first, remove dentry in parent inode
+        // first, create new dentry in new inode parent
+        auto target_parent_inode_id = filesystem_inode_smi->get_inode_id_by_path(target.to_string());
+        auto target_parent_inode = filesystem_inode_smi->get_inode_by_id(target_parent_inode_id);
+        directory_resolver_t tag_directoryResolver(target_parent_inode,
+                                                   FILESYSTEM_CUR_MODIFIABLE_VER);
+        try {
+#ifdef CMAKE_BUILD_DEBUG
+            __disable_output = true;
+#endif // CMAKE_BUILD_DEBUG
+            tag_directoryResolver.add_path(target_name, inode_id);
+            tag_directoryResolver.save_current();
+        } catch (HTMPFS_error_t & error) {
+#ifdef CMAKE_BUILD_DEBUG
+            __disable_output = false;
+#endif // CMAKE_BUILD_DEBUG
+            // allow re-link inode in filesystem
+
+            // if other error occurred, throw
+            if (error.my_errcode() != HTMPFS_DOUBLE_MKPATHNAME) {
+                throw;
+            }
+
+            // if dentry, remove current dentry
+            filesystem_inode_smi->remove_child_dentry_under_parent(target_parent_inode_id,
+                                                                   target_name);
+            // reload dentry list
+            tag_directoryResolver.refresh();
+            tag_directoryResolver.add_path(target_name, inode_id);
+            tag_directoryResolver.save_current();
+        }
+
+#ifdef CMAKE_BUILD_DEBUG
+        __disable_output = false;
+#endif // CMAKE_BUILD_DEBUG
+
+        // second, remove dentry in parent inode
         auto parent_inode_id = filesystem_inode_smi->get_inode_id_by_path(original.to_string());
         auto parent_inode = filesystem_inode_smi->get_inode_by_id(parent_inode_id);
         directory_resolver_t ori_directoryResolver(parent_inode, FILESYSTEM_CUR_MODIFIABLE_VER);
         ori_directoryResolver.remove_path(original_name);
         ori_directoryResolver.save_current();
-
-        // second, create new dentry in new inode parent
-        auto target_parent_inode_id = filesystem_inode_smi->get_inode_id_by_path(target.to_string());
-        auto target_parent_inode = filesystem_inode_smi->get_inode_by_id(target_parent_inode_id);
-        directory_resolver_t tag_directoryResolver(target_parent_inode,
-                                                   FILESYSTEM_CUR_MODIFIABLE_VER);
-        tag_directoryResolver.add_path(target_name, inode_id);
-        tag_directoryResolver.save_current();
-
 
         return 0;
 

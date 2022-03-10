@@ -99,7 +99,7 @@ public:
     /// @param volume_version volume version, provided by user
     void delete_volume(const snapshot_ver_t& volume_version);
 
-    htmpfs_size_t block_count(const snapshot_ver_t& version);
+//    htmpfs_size_t block_count(const snapshot_ver_t& version);
 
     /// change size of current inode buffer
     void truncate(htmpfs_size_t size);
@@ -184,10 +184,10 @@ private:
     /// decrease link of specific inode
     void unlink_inode(inode_id_t inode_id);
 
-    /// get buffer by buffer id
-    /// @param buffer_id buffer id
-    /// @return pointer to buffer
-    buffer_t * get_buffer_by_id(buffer_id_t buffer_id);
+//    /// get buffer by buffer id
+//    /// @param buffer_id buffer id
+//    /// @return pointer to buffer
+//    buffer_t * get_buffer_by_id(buffer_id_t buffer_id);
 
 public:
     /// public accessible snapshot version list
