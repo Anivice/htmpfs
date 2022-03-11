@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file implements the frequently used utilities
+ */
+
 #include <uni_utils.h>
 
 timespec get_current_time()

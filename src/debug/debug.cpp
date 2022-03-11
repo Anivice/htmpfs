@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file defines operations for runtime debug support
+ */
+
 #include <debug.h>
 #include <cstdio>
 #include <vector>
@@ -6,12 +11,6 @@
 #include <string>
 #include <array>
 #include <chrono>
-
-/** @file
- *
- * This file defines operations for runtime debug support
- */
-
 
 bool __is_addr2line_available = false;
 bool __is_time_enabled = false;

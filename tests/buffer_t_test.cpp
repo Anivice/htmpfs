@@ -1,13 +1,13 @@
+/** @file
+ *
+ * This file handles test for buffer_t
+ */
+
 #include <htmpfs/buffer_t.h>
 #include <string>
 #include <cstring>
 #include <iostream>
 #include <debug.h>
-
-/** @file
- *
- * This file handles test for buffer_t
- */
 
 #define VERIFY_DATA_OPS_LEN(operation, len) if ((operation) != len) { return EXIT_FAILURE; } __asm__("nop")
 

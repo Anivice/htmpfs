@@ -1,10 +1,10 @@
-#include <debug.h>
-#include <iostream>
-
 /** @file
  *
  * This file handles test for runtime debug support
  */
+
+#include <debug.h>
+#include <iostream>
 
 void func2()
 {

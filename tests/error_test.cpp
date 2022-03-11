@@ -1,10 +1,10 @@
-#include <htmpfs_error.h>
-#include <iostream>
-
 /** @file
  *
  * This file defines test for error class
  */
+
+#include <htmpfs_error.h>
+#include <iostream>
 
 int main()
 {

@@ -1,18 +1,15 @@
 #ifndef HTMPFS_BUFFER_T_H
 #define HTMPFS_BUFFER_T_H
 
-#include <cstdint>
-#include <vector>
-#include <string>
-#include <map>
-
 /** @file
  *  this file implements functions for universal buffer
  */
 
-/// universal buffer type
-typedef std::vector <char> data_t;
-typedef uint64_t htmpfs_size_t;
+#include <cstdint>
+#include <vector>
+#include <string>
+#include <map>
+#include <htmpfs/htmpfs_types.h>
 
 class buffer_t
 {

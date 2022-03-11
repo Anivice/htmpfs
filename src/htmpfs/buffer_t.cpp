@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file implements operations for a simple buffer
+ */
+
 #include <htmpfs/buffer_t.h>
 #include <functional>
 

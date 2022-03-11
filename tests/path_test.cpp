@@ -1,12 +1,12 @@
+/** @file
+ *
+ * This file handles test for pathname parser
+ */
+
 #include <htmpfs/path_t.h>
 #include <string>
 #include <iostream>
 #include <debug.h>
-
-/** @file
- *
- * This file handles test for pathname resolver
- */
 
 #define VERIFY_DATA(val, tag) if ((tag) != (val)) { return EXIT_FAILURE; } __asm__("nop")
 

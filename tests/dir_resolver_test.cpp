@@ -1,12 +1,12 @@
-#include <htmpfs/directory_resolver.h>
-#include <string>
-#include <iostream>
-#include <htmpfs/htmpfs.h>
-
 /** @file
  *
  * This file handles test for directory resolver
  */
+
+#include <htmpfs/directory_resolver.h>
+#include <string>
+#include <iostream>
+#include <htmpfs/htmpfs.h>
 
 #define VERIFY_DATA(val, tag) if ((tag) != (val)) { return EXIT_FAILURE; } __asm__("nop")
 

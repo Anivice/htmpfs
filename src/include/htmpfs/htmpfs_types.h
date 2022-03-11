@@ -1,7 +1,12 @@
 #ifndef HTMPFS_HTMPFS_TYPES_H
 #define HTMPFS_HTMPFS_TYPES_H
 
+/** @file
+ *  this file defines frequently used types
+ */
+
 #include <string>
+#include <vector>
 
 #define LEFT_SHIFT64(val, bit_count)  ((uint64_t)((uint64_t)(val) << (uint64_t)bit_count))
 #define RIGHT_SHIFT64(val, bit_count) ((uint64_t)((uint64_t)(val) >> (uint64_t)bit_count))
@@ -36,6 +41,21 @@ struct inode_result_t
 {
     inode_id_t id;
     inode_t * inode;
+};
+
+/// universal buffer type
+typedef std::vector <char> data_t;
+typedef uint64_t htmpfs_size_t;
+
+// A generic smart pointer class
+template < class Type >
+class SmartPtr {
+    Type* ptr = nullptr; // Actual pointer
+public:
+    void set(Type * _val) { ptr = _val; }
+    ~SmartPtr() { delete (ptr); }
+    Type& operator*() { return *ptr; }
+    Type* operator->() { return ptr; }
 };
 
 #endif //HTMPFS_HTMPFS_TYPES_H

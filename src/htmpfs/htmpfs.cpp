@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file implements main operations for htmpfs including inode and inode-smi
+ */
+
 #include <htmpfs/htmpfs.h>
 #include <algorithm>
 #include <htmpfs_error.h>

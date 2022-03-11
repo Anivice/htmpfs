@@ -1,12 +1,12 @@
-#include <debug.h>
-#include <iostream>
-#include <htmpfs/htmpfs.h>
-#include <string>
-
 /** @file
  *
  * This file handles test for single inode
  */
+
+#include <debug.h>
+#include <iostream>
+#include <htmpfs/htmpfs.h>
+#include <string>
 
 #define VERIFY_DATA_OPS_LEN(operation, len) if ((operation) != len) { return EXIT_FAILURE; } __asm__("nop")
 #define VERIFY_DATA(ops, data) if ((ops).to_string(FILESYSTEM_CUR_MODIFIABLE_VER) != (data)) { return EXIT_FAILURE; } __asm__("nop")

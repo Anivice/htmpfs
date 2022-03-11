@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file defines test for filesystem functionality
+ */
+
 #include <htmpfs/htmpfs.h>
 #include <iostream>
 #include <string>
@@ -9,11 +14,6 @@
 #include <sstream>
 #include <algorithm>
 #include <functional>
-
-/** @file
- *
- * This file defines test for filesystem functionality
- */
 
 #define VERIFY_DATA(val, tag) if ((tag) != (val)) { return EXIT_FAILURE; } __asm__("nop")
 

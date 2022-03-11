@@ -1,6 +1,10 @@
 #ifndef HTMPFS_FUSE_H
 #define HTMPFS_FUSE_H
 
+/** @file
+ *  this file defines functions for FUSE APIs
+ */
+
 #define FUSE_USE_VERSION 31
 #include <fuse.h>
 #include <fuse_ops.h>
@@ -12,17 +16,6 @@
 #include <execinfo.h>
 #include <sys/xattr.h>
 #include <htmpfs/htmpfs.h>
-
-// A generic smart pointer class
-template < class Type >
-class SmartPtr {
-    Type* ptr = nullptr; // Actual pointer
-public:
-    void set(Type * _val) { ptr = _val; }
-    ~SmartPtr() { delete (ptr); }
-    Type& operator*() { return *ptr; }
-    Type* operator->() { return ptr; }
-};
 
 extern SmartPtr < inode_smi_t > filesystem_inode_smi;
 

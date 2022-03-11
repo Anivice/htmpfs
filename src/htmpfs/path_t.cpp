@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file implements operations for path parser
+ */
+
 #include <htmpfs/path_t.h>
 
 path_t::path_t(const std::string & given_path)

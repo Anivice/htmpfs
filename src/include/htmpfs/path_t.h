@@ -2,7 +2,7 @@
 #define HTMPFS_PATH_T_H
 
 /** @file
- *  this file implements functions for path finder
+ *  this file implements functions for path parser
  */
 
 #include <string>

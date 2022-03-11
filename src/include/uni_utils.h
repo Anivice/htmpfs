@@ -1,6 +1,10 @@
 #ifndef HTMPFS_UNI_UTILS_H
 #define HTMPFS_UNI_UTILS_H
 
+/** @file
+ *  this file defines functions for frequently used utilities
+ */
+
 #include <cstdint>
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1,8 +1,8 @@
-#include <htmpfs_error.h>
-
 /** @file
  *  this file implements functions for HTMPFS_error_t
  */
+
+#include <htmpfs_error.h>
 
 /// used for HTMPFS_error_t::what()
 #define ERROR_SWITCH_START \

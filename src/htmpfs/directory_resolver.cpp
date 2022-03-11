@@ -1,3 +1,8 @@
+/** @file
+ *
+ * This file implements operations for directory resolver (dentry resolver)
+ */
+
 #include <htmpfs/directory_resolver.h>
 #include <htmpfs_error.h>
 #include <htmpfs/htmpfs.h>

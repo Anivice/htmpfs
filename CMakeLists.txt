@@ -38,25 +38,28 @@ default_definition(${MARCO_PREFIX}_PREFIX "\"(${PROJECT_NAME}) \"")
 # STEMPFS Static Library
 add_library(${PROJECT_NAME}
         # directory resolver
-        src/directory_resolver.cpp src/include/htmpfs/directory_resolver.h
+        src/htmpfs/directory_resolver.cpp src/include/htmpfs/directory_resolver.h
 
         # uni htmpfs
-        src/include/htmpfs/htmpfs.h src/htmpfs.cpp
+        src/include/htmpfs/htmpfs.h src/htmpfs/htmpfs.cpp
 
         # buffer
-        src/buffer_t.cpp src/include/htmpfs/buffer_t.h
+        src/htmpfs/buffer_t.cpp src/include/htmpfs/buffer_t.h
 
         # pathname resolver
-        src/path_t.cpp src/include/htmpfs/path_t.h
+        src/htmpfs/path_t.cpp src/include/htmpfs/path_t.h
 
         # low-level I/O
         src/disk_ops/ll_io.cpp src/include/ll_io/ll_io.h
+
+        # bitmap utility
+        src/htmpfs/bitmap_t.cpp src/include/htmpfs/bitmap_t.h
 
         # Debug:
         src/debug/debug.cpp src/include/debug.h src/debug/error.cpp
         src/include/htmpfs_error.h
 
-        src/uni_utils.cpp src/include/uni_utils.h
+        src/utils/uni_utils.cpp src/include/uni_utils.h
         )
 target_include_directories(${PROJECT_NAME} PUBLIC src/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${EXTERNAL_LIBRARIES})
@@ -93,4 +96,5 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             "Test for filesystem functionality")
     _add_test(sig_inode_snapshot "Test for single inode snapshot I/O")
     _add_test(ll_io             "Test for direct I/O support")
+    _add_test(bitmap            "Test for bitmap management support")
 endif()
