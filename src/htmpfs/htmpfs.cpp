@@ -988,16 +988,16 @@ std::vector < std::string > inode_smi_t::export_as_filesystem_map(snapshot_ver_t
     return filesystem_map;
 }
 
-//buffer_t *inode_smi_t::get_buffer_by_id(buffer_id_t buffer_id)
-//{
-//    auto it = buffer_pool.find(buffer_id);
-//    if (it == buffer_pool.end())
-//    {
-//        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
-//    }
-//
-//    return &it->second.buffer;
-//}
+buffer_t *inode_smi_t::get_buffer_by_id(buffer_id_t buffer_id)
+{
+    auto it = buffer_pool.find(buffer_id);
+    if (it == buffer_pool.end())
+    {
+        THROW_HTMPFS_ERROR_STDERR(HTMPFS_REQUESTED_BUFFER_NOT_FOUND);
+    }
+
+    return &it->second.buffer;
+}
 
 void inode_smi_t::create_snapshot_volume(const snapshot_ver_t& snapshot_ver)
 {

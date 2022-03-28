@@ -168,9 +168,20 @@ private:
     template<class Typename>
     uint64_t get_free_id(Typename & pool);
 
+#ifdef CMAKE_BUILD_DEBUG
+    public:
+#endif // CMAKE_BUILD_DEBUG
+
     /// REQUEST FUNCTIONS: ONLY INVOKABLE BY inode_t
     /// request allocating buffer
     buffer_result_t request_buffer_allocation();
+
+    /// get buffer by buffer id
+    /// @param buffer_id buffer id
+    /// @return pointer to buffer
+    buffer_t * get_buffer_by_id(buffer_id_t buffer_id);
+
+private:
 
     /// increase link of specific buffer
     void link_buffer(buffer_id_t buffer_id);
@@ -184,12 +195,19 @@ private:
     /// decrease link of specific inode
     void unlink_inode(inode_id_t inode_id);
 
-//    /// get buffer by buffer id
-//    /// @param buffer_id buffer id
-//    /// @return pointer to buffer
-//    buffer_t * get_buffer_by_id(buffer_id_t buffer_id);
-
 public:
+    /// TODO: load data from disk
+    void load_from_disk();
+
+    /// TODO: sync data to disk
+    void sync();
+
+    /// TODO: filesystem integrity check & auto fix
+    void integrity_check_and_fix();
+
+    /// get current block size
+    [[nodiscard]] htmpfs_size_t get_block_size () const { return block_size; }
+
     /// public accessible snapshot version list
     const std::map < snapshot_ver_t, std::vector < inode_result_t > > &
             _snapshot_version_list = snapshot_version_list;
@@ -233,6 +251,7 @@ public:
     htmpfs_size_t count_link_for_inode(inode_id_t inode_id);
 
     friend class inode_t;
+    friend class bitmap_t;
 };
 
 template<class Typename>

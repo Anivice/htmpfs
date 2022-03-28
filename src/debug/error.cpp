@@ -46,7 +46,7 @@ void HTMPFS_error_t::_output_error_message() const noexcept
 
 /// used for HTMPFS_error_t::fill_out_errno()
 #define ERRNO_SWITCH_START \
-    switch (error_code) { __asm__("nop")
+    switch (error_code) {
 /// used for HTMPFS_error_t::fill_out_errno()
 #define ERRNO_SWITCH_CASE(val_name) case val_name : _errno = val_name##_ERRNO_CODE; break
 /// used for HTMPFS_error_t::fill_out_errno()
@@ -54,7 +54,7 @@ void HTMPFS_error_t::_output_error_message() const noexcept
 
 void HTMPFS_error_t::fill_out_errno()
 {
-    ERRNO_SWITCH_START;
+    ERRNO_SWITCH_START
         ERRNO_SWITCH_CASE(HTMPFS_EXT_LIB_ERR);
         ERRNO_SWITCH_CASE(HTMPFS_DOUBLE_ALLOC);
         ERRNO_SWITCH_CASE(HTMPFS_ILLEGAL_ACCESS);

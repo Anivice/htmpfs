@@ -29,6 +29,7 @@ class inode_smi_t;
 class directory_resolver_t;
 class buffer_t;
 class inode_t;
+class bitmap_t;
 
 struct buffer_result_t
 {
